@@ -1,0 +1,254 @@
+/* ============================================================
+   Zé do Lior Viagens — Estilos
+   ============================================================ */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --brand:    #1a7f4b;
+  --brand-dk: #145c36;
+  --accent:   #f0a500;
+  --text:     #1a1a1a;
+  --muted:    #555;
+  --border:   #ddd;
+  --bg:       #f7f7f7;
+  --white:    #fff;
+  --radius:   10px;
+  --shadow:   0 2px 12px rgba(0,0,0,.10);
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.55;
+}
+
+/* ── Utilities ───────────────────────────────────────────────── */
+.hidden { display: none !important; }
+.container { max-width: 720px; margin: 0 auto; padding: 0 16px; }
+.small { font-size: 0.82em; color: var(--muted); }
+
+/* ── Header ──────────────────────────────────────────────────── */
+.site-header {
+  background: var(--brand);
+  color: var(--white);
+  padding: 28px 0 24px;
+  text-align: center;
+}
+.site-header h1 { font-size: 1.8rem; }
+.tagline { margin-top: 6px; opacity: .85; font-size: 1rem; }
+
+/* ── Section titles ──────────────────────────────────────────── */
+#trips-section { padding: 32px 0 48px; }
+#trips-section h2 { font-size: 1.3rem; margin-bottom: 20px; color: var(--brand-dk); }
+
+/* ── Trip cards ──────────────────────────────────────────────── */
+.trip-card {
+  background: var(--white);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 16px;
+  border-left: 5px solid var(--brand);
+}
+.trip-card.sold-out { border-left-color: #bbb; opacity: .75; }
+
+.trip-route { font-size: 1.2rem; font-weight: 700; margin-bottom: 4px; }
+.trip-stops { font-size: 0.88rem; color: var(--muted); margin-bottom: 8px; }
+.trip-date  { font-weight: 600; margin-bottom: 6px; }
+
+.trip-meta { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
+.trip-seats { font-size: 0.95rem; }
+.trip-seats .available { color: var(--brand); font-weight: 700; }
+.trip-seats .none      { color: #c00; font-weight: 700; }
+.trip-price { font-size: 1.15rem; font-weight: 700; color: var(--brand-dk); }
+
+/* ── Buttons ─────────────────────────────────────────────────── */
+.btn-primary, .btn-secondary, .btn-reservar {
+  display: inline-block;
+  padding: 12px 22px;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  min-height: 44px;
+  transition: background .15s;
+}
+.btn-primary, .btn-reservar {
+  background: var(--brand);
+  color: var(--white);
+  width: 100%;
+  text-align: center;
+}
+.btn-primary:hover, .btn-reservar:hover { background: var(--brand-dk); }
+.btn-primary:disabled, .btn-reservar:disabled {
+  background: #aaa;
+  cursor: not-allowed;
+}
+.btn-secondary {
+  background: transparent;
+  color: var(--brand);
+  border: 2px solid var(--brand);
+  width: 100%;
+  margin-top: 8px;
+}
+.btn-secondary:hover { background: #e8f5ee; }
+
+/* ── Skeleton loader ─────────────────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+.skeleton-card {
+  height: 160px;
+  border-radius: var(--radius);
+  margin-bottom: 16px;
+  background: linear-gradient(90deg, #e0e0e0 25%, #f0f0f0 50%, #e0e0e0 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.4s infinite;
+}
+
+/* ── Modal ───────────────────────────────────────────────────── */
+#modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.55);
+  z-index: 100;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  overflow-y: auto;
+  padding: 20px 12px;
+}
+#modal {
+  background: var(--white);
+  border-radius: var(--radius);
+  width: 100%;
+  max-width: 560px;
+  padding: 28px 24px;
+  position: relative;
+  margin: auto;
+}
+#modal-close {
+  position: absolute;
+  top: 14px; right: 16px;
+  background: none; border: none;
+  font-size: 1.7rem;
+  cursor: pointer;
+  color: var(--muted);
+  line-height: 1;
+}
+#modal h2 { margin-bottom: 14px; font-size: 1.25rem; }
+
+.trip-summary-box {
+  background: #eef7f2;
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-bottom: 20px;
+  font-size: 0.93rem;
+}
+
+/* ── Form elements ───────────────────────────────────────────── */
+.form-group {
+  margin-bottom: 16px;
+}
+.form-group label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 5px;
+  font-size: 0.9rem;
+}
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-size: 1rem;
+  min-height: 44px;
+  color: var(--text);
+  background: var(--white);
+}
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: var(--brand);
+}
+.form-group input.invalid,
+.form-group select.invalid {
+  border-color: #c00;
+}
+
+/* ── Passenger sub-form ──────────────────────────────────────── */
+.passenger-block {
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 12px;
+  position: relative;
+}
+.passenger-block .passenger-title {
+  font-weight: 700;
+  margin-bottom: 12px;
+  font-size: 0.95rem;
+  color: var(--brand-dk);
+}
+.passenger-block .remove-passenger {
+  position: absolute;
+  top: 12px; right: 12px;
+  background: none; border: none;
+  font-size: 1.1rem; cursor: pointer; color: #c00;
+}
+.minor-badge {
+  display: inline-block;
+  background: #ffe5e5;
+  color: #c00;
+  padding: 1px 8px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+/* ── Error / success ─────────────────────────────────────────── */
+.error-msg {
+  background: #ffe5e5;
+  color: #c00;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 14px;
+  font-size: 0.92rem;
+}
+.success-box {
+  text-align: center;
+  padding: 20px 0;
+}
+.success-box p { margin-bottom: 12px; font-size: 1rem; }
+
+/* ── Submit area ─────────────────────────────────────────────── */
+.submit-hint {
+  font-size: 0.82rem;
+  color: var(--muted);
+  text-align: center;
+  margin-top: 8px;
+}
+#submit-btn { margin-top: 16px; font-size: 1.05rem; }
+
+/* ── Footer ──────────────────────────────────────────────────── */
+.site-footer {
+  background: var(--brand-dk);
+  color: rgba(255,255,255,.8);
+  text-align: center;
+  padding: 20px 0;
+  font-size: 0.9rem;
+}
+.site-footer a { color: var(--accent); }
+
+/* ── Responsive ──────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .site-header h1 { font-size: 1.4rem; }
+  #modal { padding: 20px 16px; }
+}
