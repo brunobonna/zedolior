@@ -292,10 +292,14 @@ for trip in trips:
         st.markdown(f"**Rota completa:** {stop_cities}")
         if trip.get("arrival_at"):
             st.markdown(f"**Chegada prevista:** {fmt_dt(trip['arrival_at'])}")
-        if trip.get("notes"):
-            st.markdown(f"**Obs. internas:** {trip['notes']}")
-        if trip.get("public_notes"):
-            st.markdown(f"**Obs. públicas:** {trip['public_notes']}")
+
+        # ── Resumo numérico logo após o trajeto ───────────────
+        resumo_parts = []
+        if len(paid_pax)    > 0: resumo_parts.append(f"✅ {len(paid_pax)} pago(s)")
+        if len(reserved_pax)> 0: resumo_parts.append(f"⏳ {len(reserved_pax)} reservado(s)")
+        if len(pending_names)>0: resumo_parts.append(f"🔔 {len(pending_names)} pendente(s)")
+        if resumo_parts:
+            st.caption(" · ".join(resumo_parts))
 
         # ── Lista de passageiros ──────────────────────────────
         total_listed = len(paid_pax) + len(reserved_pax) + len(pending_names)
@@ -314,6 +318,12 @@ for trip in trips:
                 n += 1
             st.markdown("\n".join(lines))
 
+        # ── Observações abaixo da lista ───────────────────────
+        if trip.get("notes"):
+            st.caption(f"🔒 Obs. internas: {trip['notes']}")
+        if trip.get("public_notes"):
+            st.caption(f"🌐 Obs. públicas: {trip['public_notes']}")
+
         col_edit, col_cancel, col_complete = st.columns([2, 1, 1])
         with col_cancel:
             if trip["status"] == "active":
@@ -322,7 +332,7 @@ for trip in trips:
                     st.rerun()
         with col_complete:
             if trip["status"] == "active":
-                if st.button("🏁 Concluir", key=f"complete_{trip['id']}"):
+                if st.button("🏁 Concluir viagem", key=f"complete_{trip['id']}"):
                     st.session_state[f"confirm_complete_{trip['id']}"] = True
                     st.rerun()
 

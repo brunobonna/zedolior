@@ -139,16 +139,18 @@ passengers = load_passengers(selected_id)
 stops = load_stops(selected_id)
 trip = next(t for t in trips if t["id"] == selected_id)
 
-n_confirmed = len(passengers)
-n_paid = sum(1 for p in passengers if p["seat_status"] == "paid")
-available = trip["total_seats"] - n_confirmed
+n_paid     = sum(1 for p in passengers if p["seat_status"] == "paid")
+n_reserved = sum(1 for p in passengers if p["seat_status"] == "reserved")
+n_pending  = len(db.table("pending_requests").select("id").eq("trip_id", selected_id).eq("status", "pending").execute().data)
+available  = trip["total_seats"] - len(passengers)
 
 # Metrics
-col1, col2, col3, col4 = st.columns(4)
-col1.metric("Total de vagas", trip["total_seats"])
-col2.metric("Confirmados", n_confirmed)
-col3.metric("Disponíveis", available)
-col4.metric("Pagos", n_paid)
+col1, col2, col3, col4, col5 = st.columns(5)
+col1.metric("Vagas", trip["total_seats"])
+col2.metric("Disponíveis", available)
+col3.metric("✅ Pagos", n_paid)
+col4.metric("⏳ Reservados", n_reserved)
+col5.metric("🔔 Pendentes", n_pending)
 
 st.divider()
 

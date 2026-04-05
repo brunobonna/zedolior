@@ -134,7 +134,7 @@ with tab_pending:
 
                         col_confirm, col_back = st.columns(2)
                         confirm = col_confirm.form_submit_button("✅ Confirmar aprovação", type="primary")
-                        cancel = col_back.form_submit_button("Cancelar")
+                        cancel = col_back.form_submit_button("⏭️ Avaliar depois")
 
                     if confirm:
                         errors = [f"Nome do passageiro {i+1} é obrigatório." for i, p in enumerate(edited_passengers) if not p["name"].strip()]
