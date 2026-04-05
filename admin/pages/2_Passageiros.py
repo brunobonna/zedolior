@@ -89,6 +89,9 @@ def passenger_form(stops: list[str], passenger: dict | None = None, key_prefix: 
             phone = st.text_input("Celular", value=passenger.get("phone") or "" if is_edit else "",
                 placeholder="(21) 99999-9999")
 
+        group_leader = st.text_input("Responsável pelo grupo (deixe vazio se viaja sozinho)",
+            value=passenger.get("group_leader") or "" if is_edit else "",
+            placeholder="Nome do passageiro principal do grupo")
         notes = st.text_area("Observações (bagagem, etc.)",
             value=passenger.get("notes") or "" if is_edit else "", height=80)
 
@@ -115,6 +118,7 @@ def passenger_form(stops: list[str], passenger: dict | None = None, key_prefix: 
             "birth_date": birth_date.isoformat(),
             "is_minor": is_minor(birth_date.isoformat()),
             "phone": phone.strip() or None,
+            "group_leader": group_leader.strip() or None,
             "boarding_city": boarding_city,
             "alighting_city": alighting_city,
             "seat_status": seat_status,
@@ -196,16 +200,23 @@ for p in passengers:
     minor_badge = ' <span class="badge-minor">Menor</span>' if p.get("is_minor") else ""
     status_badge_class = "badge-paid" if p["seat_status"] == "paid" else "badge-reserved"
     status_text = STATUS_LABELS.get(p["seat_status"], p["seat_status"])
-    header_html = f'<b>{p["name"]}</b>{minor_badge} &nbsp; <span class="{status_badge_class}">{status_text}</span>'
+    group_suffix = f' <span style="color:#888;font-size:0.85em">({p["group_leader"]})</span>' if p.get("group_leader") else ""
+    header_html = f'<b>{p["name"]}</b>{group_suffix}{minor_badge} &nbsp; <span class="{status_badge_class}">{status_text}</span>'
+    expander_label = f"{STATUS_COLORS.get(p['seat_status'], '')} {p['name']}" + (f" ({p['group_leader']})" if p.get("group_leader") else "")
 
-    with st.expander(f"{STATUS_COLORS.get(p['seat_status'], '')} {p['name']}", expanded=False):
+    with st.expander(expander_label, expanded=False):
         st.markdown(header_html, unsafe_allow_html=True)
 
         col_a, col_b = st.columns(2)
         with col_a:
             st.markdown(f"**CPF:** {p['cpf']}")
             st.markdown(f"**RG:** {p.get('rg') or '—'}")
-            st.markdown(f"**Nascimento:** {p['birth_date']}" + (" *(menor de idade)*" if p.get("is_minor") else ""))
+            from datetime import date as _date
+            try:
+                bd_fmt = _date.fromisoformat(p['birth_date']).strftime("%d/%m/%Y")
+            except Exception:
+                bd_fmt = p['birth_date']
+            st.markdown(f"**Nascimento:** {bd_fmt}" + (" *(menor de idade)*" if p.get("is_minor") else ""))
         with col_b:
             st.markdown(f"**Embarque:** {p['boarding_city']}")
             st.markdown(f"**Desembarque:** {p['alighting_city']}")

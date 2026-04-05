@@ -155,13 +155,15 @@ with tab_pending:
                                 st.error(e)
                         else:
                             try:
-                                for p in edited_passengers:
+                                leader_name = edited_passengers[0]["name"].strip() if edited_passengers else ""
+                                for idx, p in enumerate(edited_passengers):
                                     db.table("passengers").insert({
                                         "trip_id": req["trip_id"],
                                         "boarding_city": boarding_city,
                                         "alighting_city": alighting_city,
                                         "seat_status": "reserved",
                                         "source": "public_request",
+                                        "group_leader": None if idx == 0 else leader_name,
                                         **p,
                                     }).execute()
                                 db.table("pending_requests").update({

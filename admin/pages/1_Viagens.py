@@ -308,10 +308,12 @@ for trip in trips:
             lines = []
             n = 1
             for p in paid_pax:
-                lines.append(f"{n}. ✅ {p['name']}")
+                suffix = f" ({p['group_leader']})" if p.get("group_leader") else ""
+                lines.append(f"{n}. ✅ {p['name']}{suffix}")
                 n += 1
             for p in reserved_pax:
-                lines.append(f"{n}. ⏳ {p['name']}")
+                suffix = f" ({p['group_leader']})" if p.get("group_leader") else ""
+                lines.append(f"{n}. ⏳ {p['name']}{suffix}")
                 n += 1
             for name in pending_names:
                 lines.append(f"{n}. 🔔 {name} *(pendente)*")
