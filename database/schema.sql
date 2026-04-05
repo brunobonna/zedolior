@@ -103,6 +103,7 @@ select
   t.price,
   t.status,
   t.notes,
+  t.public_notes,
   count(p.id) as seats_taken,
   t.total_seats - count(p.id) as seats_available
 from trips t

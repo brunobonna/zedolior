@@ -248,13 +248,29 @@ if not trips:
 # Filtro — padrão: Ativas
 filter_status = st.selectbox(
     "Filtrar por status",
-    ["Ativas", "Todas", "Canceladas", "Concluídas"],  # "Ativas" é o default
+    ["Ativas", "Todas", "Canceladas", "Concluídas"],
 )
 status_map = {"Ativas": "active", "Canceladas": "cancelled", "Concluídas": "completed"}
 if filter_status != "Todas":
     trips = [t for t in trips if t["status"] == status_map[filter_status]]
 
 st.caption(f"{len(trips)} viagem(ns) encontrada(s)")
+
+# Carrega passageiros e pendentes de todas as viagens visíveis em batch
+trip_ids = [t["id"] for t in trips]
+all_pax = db.table("passengers").select("id, trip_id, name, seat_status, created_at").in_("trip_id", trip_ids).order("created_at").execute().data if trip_ids else []
+all_pending = db.table("pending_requests").select("id, trip_id, passengers_json, submitted_at").eq("status", "pending").in_("trip_id", trip_ids).order("submitted_at").execute().data if trip_ids else []
+
+def pax_for_trip(tid):
+    paid = [p for p in all_pax if p["trip_id"] == tid and p["seat_status"] == "paid"]
+    reserved = [p for p in all_pax if p["trip_id"] == tid and p["seat_status"] == "reserved"]
+    pending_reqs = [r for r in all_pending if r["trip_id"] == tid]
+    # Expande nomes dos pendentes
+    pending_names = []
+    for req in pending_reqs:
+        for p in (req.get("passengers_json") or []):
+            pending_names.append(p.get("name", "?"))
+    return paid, reserved, pending_names
 
 for trip in trips:
     stops       = load_stops(trip["id"])
@@ -270,6 +286,8 @@ for trip in trips:
         f"R$ {float(trip['price']):.2f}"
     )
 
+    paid_pax, reserved_pax, pending_names = pax_for_trip(trip["id"])
+
     with st.expander(header):
         st.markdown(f"**Rota completa:** {stop_cities}")
         if trip.get("arrival_at"):
@@ -278,6 +296,23 @@ for trip in trips:
             st.markdown(f"**Obs. internas:** {trip['notes']}")
         if trip.get("public_notes"):
             st.markdown(f"**Obs. públicas:** {trip['public_notes']}")
+
+        # ── Lista de passageiros ──────────────────────────────
+        total_listed = len(paid_pax) + len(reserved_pax) + len(pending_names)
+        if total_listed:
+            st.markdown("**Passageiros:**")
+            lines = []
+            n = 1
+            for p in paid_pax:
+                lines.append(f"{n}. ✅ {p['name']}")
+                n += 1
+            for p in reserved_pax:
+                lines.append(f"{n}. ⏳ {p['name']}")
+                n += 1
+            for name in pending_names:
+                lines.append(f"{n}. 🔔 {name} *(pendente)*")
+                n += 1
+            st.markdown("\n".join(lines))
 
         col_edit, col_cancel, col_complete = st.columns([2, 1, 1])
         with col_cancel:
@@ -288,7 +323,7 @@ for trip in trips:
         with col_complete:
             if trip["status"] == "active":
                 if st.button("🏁 Concluir", key=f"complete_{trip['id']}"):
-                    db.table("trips").update({"status": "completed"}).eq("id", trip["id"]).execute()
+                    st.session_state[f"confirm_complete_{trip['id']}"] = True
                     st.rerun()
 
         # Confirmação de cancelamento
@@ -311,6 +346,20 @@ for trip in trips:
             with cc2:
                 if st.button("Voltar", key=f"cancel_no_{trip['id']}"):
                     st.session_state.pop(f"confirm_cancel_{trip['id']}", None)
+                    st.rerun()
+
+        # Confirmação de conclusão
+        if st.session_state.get(f"confirm_complete_{trip['id']}"):
+            st.info(f"🏁 **Confirmar conclusão?** A viagem será marcada como encerrada e não aparecerá mais no site público.")
+            ce1, ce2 = st.columns(2)
+            with ce1:
+                if st.button("✅ Sim, concluir", key=f"complete_yes_{trip['id']}", type="primary"):
+                    db.table("trips").update({"status": "completed"}).eq("id", trip["id"]).execute()
+                    st.session_state.pop(f"confirm_complete_{trip['id']}", None)
+                    st.rerun()
+            with ce2:
+                if st.button("Voltar", key=f"complete_no_{trip['id']}"):
+                    st.session_state.pop(f"confirm_complete_{trip['id']}", None)
                     st.rerun()
 
         edit_key = f"edit_{trip['id']}"

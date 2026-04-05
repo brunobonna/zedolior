@@ -15,11 +15,15 @@ db = get_supabase()
 # ── Helpers ───────────────────────────────────────────────────
 
 def load_requests(status: str):
-    return (db.table("pending_requests")
-              .select("*, trips(origin, destination, departure_at)")
+    # Só mostra pendentes de viagens ativas
+    rows = (db.table("pending_requests")
+              .select("*, trips(origin, destination, departure_at, status)")
               .eq("status", status)
               .order("submitted_at", desc=(status == "pending"))
               .execute().data)
+    if status == "pending":
+        rows = [r for r in rows if (r.get("trips") or {}).get("status") == "active"]
+    return rows
 
 def load_stops(trip_id: str) -> list[str]:
     rows = db.table("trip_stops").select("city").eq("trip_id", trip_id).order("stop_order").execute().data

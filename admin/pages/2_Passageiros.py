@@ -206,18 +206,22 @@ for p in passengers:
             if p.get("notes"):
                 st.markdown(f"**Obs:** {p['notes']}")
 
-        # Quick status change
-        new_status = st.selectbox(
-            "Alterar status",
+        # Status salvo automaticamente ao mudar
+        def _make_status_saver(pid, old_status):
+            def _save():
+                new = st.session_state[f"status_{pid}"]
+                if new != old_status:
+                    db.table("passengers").update({"seat_status": new}).eq("id", pid).execute()
+            return _save
+
+        st.selectbox(
+            "Status da vaga",
             STATUS_OPTIONS,
             index=STATUS_OPTIONS.index(p["seat_status"]) if p["seat_status"] in STATUS_OPTIONS else 0,
             format_func=lambda s: STATUS_LABELS.get(s, s),
-            key=f"status_{p['id']}"
+            key=f"status_{p['id']}",
+            on_change=_make_status_saver(p["id"], p["seat_status"]),
         )
-        if new_status != p["seat_status"]:
-            if st.button("Salvar status", key=f"save_status_{p['id']}"):
-                db.table("passengers").update({"seat_status": new_status}).eq("id", p["id"]).execute()
-                st.rerun()
 
         col_edit, col_del = st.columns([3, 1])
         with col_edit:
