@@ -86,8 +86,11 @@ def passenger_form(stops: list[str], passenger: dict | None = None, key_prefix: 
                 seat_status = st.selectbox("Status da vaga", STATUS_OPTIONS,
                     format_func=lambda s: STATUS_LABELS.get(s, s))
         with col6:
-            notes = st.text_area("Observações (bagagem, etc.)",
-                value=passenger.get("notes") or "" if is_edit else "", height=80)
+            phone = st.text_input("Celular", value=passenger.get("phone") or "" if is_edit else "",
+                placeholder="(21) 99999-9999")
+
+        notes = st.text_area("Observações (bagagem, etc.)",
+            value=passenger.get("notes") or "" if is_edit else "", height=80)
 
         label = "💾 Salvar" if is_edit else "➕ Adicionar passageiro"
         submitted = st.form_submit_button(label, type="primary")
@@ -111,6 +114,7 @@ def passenger_form(stops: list[str], passenger: dict | None = None, key_prefix: 
             "rg": rg.strip() or None,
             "birth_date": birth_date.isoformat(),
             "is_minor": is_minor(birth_date.isoformat()),
+            "phone": phone.strip() or None,
             "boarding_city": boarding_city,
             "alighting_city": alighting_city,
             "seat_status": seat_status,
@@ -207,6 +211,11 @@ for p in passengers:
             st.markdown(f"**Desembarque:** {p['alighting_city']}")
             if p.get("notes"):
                 st.markdown(f"**Obs:** {p['notes']}")
+
+        if p.get("phone"):
+            phone_digits = "".join(c for c in p["phone"] if c.isdigit())
+            wa_url = f"https://wa.me/55{phone_digits}" if not phone_digits.startswith("55") else f"https://wa.me/{phone_digits}"
+            st.link_button(f"💬 WhatsApp {p['phone']}", wa_url)
 
         # Status salvo automaticamente ao mudar
         def _make_status_saver(pid, old_status):

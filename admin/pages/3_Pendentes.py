@@ -75,15 +75,18 @@ with tab_pending:
             n_pass = req["passenger_count"]
             extra = f" +{n_pass - 1} mais" if n_pass > 1 else ""
             with st.expander(f"📋 {first_name}{extra} | {trip_label} | {fmt_dt(req['submitted_at'])}", expanded=True):
-                # Telefone do solicitante (vem no primeiro passageiro do JSON)
-                contact_phone = ""
-                if passengers_json:
-                    contact_phone = passengers_json[0].get("phone", "")
                 st.markdown(f"**Viagem:** {trip_label}")
                 st.markdown(f"**Embarque:** {req['boarding_city']} &nbsp;→&nbsp; **Desembarque:** {req['alighting_city']}")
-                if contact_phone:
-                    st.markdown(f"📱 **Celular:** {contact_phone}")
                 st.markdown(f"**Enviado em:** {fmt_dt(req['submitted_at'])}")
+
+                # Botões WhatsApp por passageiro (fora do form)
+                for i, p_raw in enumerate(passengers_json):
+                    raw_phone = p_raw.get("phone", "")
+                    if raw_phone:
+                        digits = "".join(c for c in raw_phone if c.isdigit())
+                        wa = f"https://wa.me/55{digits}" if not digits.startswith("55") else f"https://wa.me/{digits}"
+                        label = p_raw.get("name") or f"Passageiro {i+1}"
+                        st.link_button(f"💬 WhatsApp — {label} ({raw_phone})", wa)
 
                 st.divider()
 
@@ -126,6 +129,8 @@ with tab_pending:
                                 p_birth = st.date_input("Data de nascimento", value=birth_val,
                                     min_value=date(1900, 1, 1), max_value=date.today(),
                                     key=f"pbirth_{req['id']}_{i}")
+                            p_phone = st.text_input("Celular", value=p_raw.get("phone", ""),
+                                placeholder="(21) 99999-9999", key=f"pphone_{req['id']}_{i}")
                             p_notes = st.text_area("Observações (bagagem, etc.)",
                                 value=p_raw.get("notes", ""), key=f"pnotes_{req['id']}_{i}", height=60)
 
@@ -135,6 +140,7 @@ with tab_pending:
                                 "rg": p_rg or None,
                                 "birth_date": p_birth.isoformat(),
                                 "is_minor": is_minor(p_birth.isoformat()),
+                                "phone": p_phone.strip() or None,
                                 "notes": p_notes or None,
                             })
 

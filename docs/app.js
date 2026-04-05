@@ -73,11 +73,9 @@ function fmtPhone(input) {
 }
 
 // ── WhatsApp URL ──────────────────────────────────────────────
-function buildWhatsAppUrl(trip, boardingCity, alightingCity, passengers, phone) {
+function buildWhatsAppUrl(trip, boardingCity, alightingCity, passengers) {
   const tripDate = fmtDateShort(trip.departure_at);
-  let msg = `Olá! Quero reservar uma vaga na viagem de *${boardingCity}* para *${alightingCity}* no dia *${tripDate}*.\n`;
-  if (phone) msg += `Meu celular: *${phone}*\n`;
-  msg += `\nSeguem meus dados:\n`;
+  let msg = `Olá! Quero reservar uma vaga na viagem de *${boardingCity}* para *${alightingCity}* no dia *${tripDate}*.\n\nSeguem meus dados:\n`;
 
   passengers.forEach((p, i) => {
     const bd = p.birth_date ? new Date(p.birth_date + "T00:00:00").toLocaleDateString("pt-BR") : "—";
@@ -85,7 +83,9 @@ function buildWhatsAppUrl(trip, boardingCity, alightingCity, passengers, phone) 
     if (isMinor(p.birth_date)) msg += " _(menor de idade)_";
     msg += `\nCPF: ${p.cpf}`;
     msg += `\nRG: ${p.rg || "não informado"}`;
-    msg += `\nNascimento: ${bd}\n`;
+    msg += `\nNascimento: ${bd}`;
+    if (p.phone) msg += `\nCelular: ${p.phone}`;
+    msg += `\n`;
   });
 
   msg += `\nAguardo confirmação. Obrigado!`;
@@ -252,6 +252,12 @@ function passengerBlock(num) {
           max="${new Date().toISOString().split("T")[0]}"
           oninput="checkMinor(${num})" required />
       </div>
+      <div class="form-group">
+        <label for="p${num}-phone">Celular <span class="field-hint">(xx) xxxxx-xxxx</span></label>
+        <input type="tel" id="p${num}-phone" name="p${num}-phone"
+          placeholder="(21) 99999-9999" maxlength="15"
+          oninput="fmtPhone(this)" />
+      </div>
     </div>
   `;
 }
@@ -279,20 +285,19 @@ function collectPassengers() {
     const cpf   = (document.getElementById(`p${num}-cpf`)?.value   || "").trim();
     const rg    = (document.getElementById(`p${num}-rg`)?.value    || "").trim();
     const birth = document.getElementById(`p${num}-birth`)?.value  || "";
-    passengers.push({ name, cpf, rg: rg || null, birth_date: birth });
+    const phone = (document.getElementById(`p${num}-phone`)?.value || "").trim();
+    passengers.push({ name, cpf, rg: rg || null, birth_date: birth, phone: phone || null });
   }
   return passengers;
 }
 
-function validateForm(passengers, boardingCity, alightingCity, phone) {
+function validateForm(passengers, boardingCity, alightingCity) {
   const errors = [];
   if (!boardingCity)  errors.push("Selecione a cidade de embarque.");
   if (!alightingCity) errors.push("Selecione a cidade de desembarque.");
   if (boardingCity && alightingCity && boardingCity === alightingCity) {
     errors.push("Embarque e desembarque não podem ser na mesma cidade.");
   }
-  const digits = (phone || "").replace(/\D/g, "");
-  if (digits.length < 10) errors.push("Informe um celular válido com DDD.");
   passengers.forEach((p, i) => {
     if (!p.name)       errors.push(`Nome do passageiro ${i + 1} é obrigatório.`);
     if (!p.cpf)        errors.push(`CPF do passageiro ${i + 1} é obrigatório.`);
@@ -337,9 +342,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const boardingCity  = document.getElementById("boarding-city").value;
     const alightingCity = document.getElementById("alighting-city").value;
-    const phone         = (document.getElementById("contact-phone")?.value || "").trim();
     const passengers    = collectPassengers();
-    const errors        = validateForm(passengers, boardingCity, alightingCity, phone);
+    const errors        = validateForm(passengers, boardingCity, alightingCity);
 
     const errorBox = document.getElementById("form-error");
     if (errors.length) {
@@ -356,7 +360,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // ⚠️ Abre o WhatsApp ANTES de qualquer await, ainda no contexto
     // do gesto do usuário — necessário para não ser bloqueado no mobile.
-    const waUrl = buildWhatsAppUrl(currentTrip, boardingCity, alightingCity, passengers, phone);
+    const waUrl = buildWhatsAppUrl(currentTrip, boardingCity, alightingCity, passengers);
     window.location.href = waUrl;
 
     // Envia para o Supabase em segundo plano (não bloqueia a abertura do WA)
@@ -365,7 +369,7 @@ document.addEventListener("DOMContentLoaded", () => {
       boarding_city: boardingCity,
       alighting_city: alightingCity,
       passenger_count: passengers.length,
-      passengers_json: passengers.map(p => ({ ...p, phone })),
+      passengers_json: passengers,
     }).catch(err => console.error("Erro ao registrar solicitação:", err));
 
     document.getElementById("reservation-form").classList.add("hidden");
