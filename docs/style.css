@@ -54,9 +54,34 @@ body {
 }
 .trip-card.sold-out { border-left-color: #bbb; opacity: .75; }
 
+.trips-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+.trips-header h2 { margin-bottom: 0; }
+
+.btn-reload {
+  background: transparent;
+  border: 1.5px solid var(--brand);
+  color: var(--brand);
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  min-height: 36px;
+}
+.btn-reload:hover { background: #e8f5ee; }
+
 .trip-route { font-size: 1.2rem; font-weight: 700; margin-bottom: 4px; }
 .trip-stops { font-size: 0.88rem; color: var(--muted); margin-bottom: 8px; }
 .trip-date  { font-weight: 600; margin-bottom: 6px; }
+.trip-public-notes {
+  font-size: 0.88rem;
+  color: #555;
+  background: #fffbea;
+  border-left: 3px solid var(--accent);
+  padding: 6px 10px;
+  border-radius: 0 6px 6px 0;
+  margin-bottom: 10px;
+}
 
 .trip-meta { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
 .trip-seats { font-size: 0.95rem; }

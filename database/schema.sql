@@ -17,7 +17,8 @@ create table trips (
   price         numeric(10, 2) not null check (price >= 0),
   status        text not null default 'active'
                   check (status in ('active', 'cancelled', 'completed')),
-  notes         text,
+  notes         text,         -- observações internas (só no admin)
+  public_notes  text,         -- observações públicas (aparece no site)
   created_at    timestamptz not null default now(),
   updated_at    timestamptz not null default now()
 );

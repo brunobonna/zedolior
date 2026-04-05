@@ -5,8 +5,8 @@
 "use strict";
 
 // ── State ─────────────────────────────────────────────────────
-let currentTrip = null;   // trip object currently open in modal
-let currentStops = [];    // ordered stop cities for current trip
+let currentTrip  = null;
+let currentStops = [];   // [{city, stop_order}] ordered
 let passengerCount = 1;
 
 // ── Supabase REST helper ──────────────────────────────────────
@@ -19,9 +19,7 @@ function sbHeaders() {
 }
 
 async function sbGet(path) {
-  const res = await fetch(`${window.SUPABASE_URL}/rest/v1/${path}`, {
-    headers: sbHeaders(),
-  });
+  const res = await fetch(`${window.SUPABASE_URL}/rest/v1/${path}`, { headers: sbHeaders() });
   if (!res.ok) throw new Error(`Erro ao buscar dados: ${res.status}`);
   return res.json();
 }
@@ -42,7 +40,7 @@ async function sbPost(path, body) {
 // ── Date / age helpers ────────────────────────────────────────
 function isMinor(birthDateStr) {
   if (!birthDateStr) return false;
-  const birth = new Date(birthDateStr);
+  const birth = new Date(birthDateStr + "T00:00:00");
   const today = new Date();
   let age = today.getFullYear() - birth.getFullYear();
   const m = today.getMonth() - birth.getMonth();
@@ -68,8 +66,8 @@ function fmtPrice(val) {
 
 // ── WhatsApp URL ──────────────────────────────────────────────
 function buildWhatsAppUrl(trip, boardingCity, alightingCity, passengers) {
-  const date = fmtDateShort(trip.departure_at);
-  let msg = `Olá! Quero reservar uma vaga na viagem de *${boardingCity}* para *${alightingCity}* no dia *${date}*.\n\nSeguem meus dados:\n`;
+  const tripDate = fmtDateShort(trip.departure_at);
+  let msg = `Olá! Quero reservar uma vaga na viagem de *${boardingCity}* para *${alightingCity}* no dia *${tripDate}*.\n\nSeguem meus dados:\n`;
 
   passengers.forEach((p, i) => {
     const bd = p.birth_date ? new Date(p.birth_date + "T00:00:00").toLocaleDateString("pt-BR") : "—";
@@ -87,14 +85,19 @@ function buildWhatsAppUrl(trip, boardingCity, alightingCity, passengers) {
 // ── Trip card renderer ────────────────────────────────────────
 function renderTripCard(trip, stops) {
   const available = Number(trip.seats_available);
-  const soldOut = available <= 0;
+  const soldOut   = available <= 0;
   const stopCities = stops.map(s => s.city).join(" → ");
+
+  const publicNotesHtml = trip.public_notes
+    ? `<div class="trip-public-notes">ℹ️ ${trip.public_notes}</div>`
+    : "";
 
   return `
     <article class="trip-card${soldOut ? " sold-out" : ""}" data-trip-id="${trip.id}">
       <div class="trip-route">${trip.origin} → ${trip.destination}</div>
       <div class="trip-stops">${stopCities}</div>
       <div class="trip-date">📅 ${fmtDate(trip.departure_at)}</div>
+      ${publicNotesHtml}
       <div class="trip-meta">
         <div class="trip-seats">
           Vagas: <span class="${soldOut ? "none" : "available"}">${available}</span> / ${trip.total_seats}
@@ -113,14 +116,14 @@ function renderTripCard(trip, stops) {
 // ── Load and render trips ─────────────────────────────────────
 async function loadAndRender() {
   const container = document.getElementById("trips-container");
-  const noTrips = document.getElementById("no-trips");
+  const noTrips   = document.getElementById("no-trips");
+
+  // Show skeletons
+  container.innerHTML = `<div class="skeleton-card"></div><div class="skeleton-card"></div>`;
+  noTrips.classList.add("hidden");
 
   try {
-    const trips = await sbGet(
-      "trip_availability?status=eq.active&order=departure_at.asc"
-    );
-
-    // Remove skeletons
+    const trips = await sbGet("trip_availability?status=eq.active&order=departure_at.asc");
     container.innerHTML = "";
 
     if (!trips.length) {
@@ -128,13 +131,9 @@ async function loadAndRender() {
       return;
     }
 
-    // Fetch all stops in one request
     const ids = trips.map(t => t.id).join(",");
-    const allStops = await sbGet(
-      `trip_stops?trip_id=in.(${ids})&order=stop_order.asc`
-    );
+    const allStops = await sbGet(`trip_stops?trip_id=in.(${ids})&order=stop_order.asc`);
 
-    // Group stops by trip
     const stopsByTrip = {};
     allStops.forEach(s => {
       if (!stopsByTrip[s.trip_id]) stopsByTrip[s.trip_id] = [];
@@ -146,11 +145,9 @@ async function loadAndRender() {
       container.insertAdjacentHTML("beforeend", renderTripCard(trip, stops));
     });
 
-    // Store stop data for modal use
     window._tripsData = trips;
     window._stopsData = stopsByTrip;
 
-    // Attach reserve buttons
     container.querySelectorAll(".btn-reservar:not([disabled])").forEach(btn => {
       btn.addEventListener("click", () => openModal(btn.dataset.tripId));
     });
@@ -166,27 +163,24 @@ function openModal(tripId) {
   const trip = (window._tripsData || []).find(t => t.id === tripId);
   if (!trip) return;
 
-  currentTrip = trip;
+  currentTrip  = trip;
   currentStops = (window._stopsData || {})[tripId] || [];
   passengerCount = 1;
 
-  // Summary
   document.getElementById("modal-trip-summary").innerHTML = `
     <strong>${trip.origin} → ${trip.destination}</strong><br>
     📅 ${fmtDate(trip.departure_at)} &nbsp;|&nbsp;
     💰 ${fmtPrice(trip.price)} por pessoa &nbsp;|&nbsp;
     ${trip.seats_available} vaga(s) disponível(is)
+    ${trip.public_notes ? `<br><br>ℹ️ <em>${trip.public_notes}</em>` : ""}
   `;
 
-  // Populate city selects
   populateCitySelects();
 
-  // Render first passenger
   const pContainer = document.getElementById("passengers-container");
   pContainer.innerHTML = "";
   pContainer.insertAdjacentHTML("beforeend", passengerBlock(1));
 
-  // Reset state
   document.getElementById("reservation-form").classList.remove("hidden");
   document.getElementById("modal-success").classList.add("hidden");
   document.getElementById("form-error").classList.add("hidden");
@@ -203,12 +197,21 @@ function closeModal() {
 }
 
 function populateCitySelects() {
-  ["boarding-city", "alighting-city"].forEach((id, idx) => {
-    const sel = document.getElementById(id);
-    sel.innerHTML = currentStops.map(
-      (s, i) => `<option value="${s.city}" ${i === (idx === 0 ? 0 : currentStops.length - 1) ? "selected" : ""}>${s.city}</option>`
-    ).join("");
-  });
+  // Embarque: todas as cidades EXCETO a última (destino final)
+  const boardingStops  = currentStops.slice(0, -1);
+  // Desembarque: todas as cidades EXCETO a primeira (origem)
+  const alightingStops = currentStops.slice(1);
+
+  const boardingSel  = document.getElementById("boarding-city");
+  const alightingSel = document.getElementById("alighting-city");
+
+  boardingSel.innerHTML = boardingStops.map(
+    (s, i) => `<option value="${s.city}" ${i === 0 ? "selected" : ""}>${s.city}</option>`
+  ).join("");
+
+  alightingSel.innerHTML = alightingStops.map(
+    (s, i) => `<option value="${s.city}" ${i === alightingStops.length - 1 ? "selected" : ""}>${s.city}</option>`
+  ).join("");
 }
 
 // ── Passenger block HTML ──────────────────────────────────────
@@ -245,13 +248,9 @@ function passengerBlock(num) {
 
 function checkMinor(num) {
   const birthInput = document.getElementById(`p${num}-birth`);
-  const badge = document.getElementById(`minor-badge-${num}`);
+  const badge      = document.getElementById(`minor-badge-${num}`);
   if (!birthInput || !badge) return;
-  if (isMinor(birthInput.value)) {
-    badge.classList.remove("hidden");
-  } else {
-    badge.classList.add("hidden");
-  }
+  badge.classList.toggle("hidden", !isMinor(birthInput.value));
 }
 
 function removePassenger(num) {
@@ -265,11 +264,11 @@ function collectPassengers() {
   const passengers = [];
   const blocks = document.querySelectorAll(".passenger-block");
   for (const block of blocks) {
-    const num = block.id.replace("passenger-", "");
-    const name  = (document.getElementById(`p${num}-name`)?.value || "").trim();
-    const cpf   = (document.getElementById(`p${num}-cpf`)?.value || "").trim();
-    const rg    = (document.getElementById(`p${num}-rg`)?.value || "").trim();
-    const birth = document.getElementById(`p${num}-birth`)?.value || "";
+    const num   = block.id.replace("passenger-", "");
+    const name  = (document.getElementById(`p${num}-name`)?.value  || "").trim();
+    const cpf   = (document.getElementById(`p${num}-cpf`)?.value   || "").trim();
+    const rg    = (document.getElementById(`p${num}-rg`)?.value    || "").trim();
+    const birth = document.getElementById(`p${num}-birth`)?.value  || "";
     passengers.push({ name, cpf, rg: rg || null, birth_date: birth });
   }
   return passengers;
@@ -277,26 +276,28 @@ function collectPassengers() {
 
 function validateForm(passengers, boardingCity, alightingCity) {
   const errors = [];
-  if (!boardingCity) errors.push("Selecione a cidade de embarque.");
+  if (!boardingCity)  errors.push("Selecione a cidade de embarque.");
   if (!alightingCity) errors.push("Selecione a cidade de desembarque.");
   if (boardingCity && alightingCity && boardingCity === alightingCity) {
     errors.push("Embarque e desembarque não podem ser na mesma cidade.");
   }
   passengers.forEach((p, i) => {
-    if (!p.name) errors.push(`Nome do passageiro ${i + 1} é obrigatório.`);
-    if (!p.cpf)  errors.push(`CPF do passageiro ${i + 1} é obrigatório.`);
+    if (!p.name)       errors.push(`Nome do passageiro ${i + 1} é obrigatório.`);
+    if (!p.cpf)        errors.push(`CPF do passageiro ${i + 1} é obrigatório.`);
     if (!p.birth_date) errors.push(`Data de nascimento do passageiro ${i + 1} é obrigatória.`);
   });
   return errors;
 }
 
-// ── Form submit ───────────────────────────────────────────────
+// ── DOMContentLoaded ──────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
   // Footer WhatsApp link
   const footerLink = document.getElementById("footer-whatsapp");
-  if (footerLink) {
-    footerLink.href = `https://wa.me/${window.WHATSAPP_NUMBER}`;
-  }
+  if (footerLink) footerLink.href = `https://wa.me/${window.WHATSAPP_NUMBER}`;
+
+  // Botão recarregar
+  const reloadBtn = document.getElementById("reload-btn");
+  if (reloadBtn) reloadBtn.addEventListener("click", loadAndRender);
 
   // Load trips
   loadAndRender();
@@ -306,15 +307,13 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("modal-overlay").addEventListener("click", e => {
     if (e.target === document.getElementById("modal-overlay")) closeModal();
   });
-  document.addEventListener("keydown", e => {
-    if (e.key === "Escape") closeModal();
-  });
+  document.addEventListener("keydown", e => { if (e.key === "Escape") closeModal(); });
 
   // Add passenger
   document.getElementById("add-passenger-btn").addEventListener("click", () => {
     passengerCount++;
-    const pContainer = document.getElementById("passengers-container");
-    pContainer.insertAdjacentHTML("beforeend", passengerBlock(passengerCount));
+    document.getElementById("passengers-container")
+      .insertAdjacentHTML("beforeend", passengerBlock(passengerCount));
   });
 
   // Close success
@@ -326,8 +325,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const boardingCity  = document.getElementById("boarding-city").value;
     const alightingCity = document.getElementById("alighting-city").value;
-    const passengers = collectPassengers();
-    const errors = validateForm(passengers, boardingCity, alightingCity);
+    const passengers    = collectPassengers();
+    const errors        = validateForm(passengers, boardingCity, alightingCity);
 
     const errorBox = document.getElementById("form-error");
     if (errors.length) {
@@ -343,7 +342,6 @@ document.addEventListener("DOMContentLoaded", () => {
     submitBtn.textContent = "Enviando...";
 
     try {
-      // Submit to Supabase as pending request
       await sbPost("pending_requests", {
         trip_id: currentTrip.id,
         boarding_city: boardingCity,
@@ -352,11 +350,9 @@ document.addEventListener("DOMContentLoaded", () => {
         passengers_json: passengers,
       });
 
-      // Open WhatsApp
       const waUrl = buildWhatsAppUrl(currentTrip, boardingCity, alightingCity, passengers);
       window.open(waUrl, "_blank");
 
-      // Show success
       document.getElementById("reservation-form").classList.add("hidden");
       document.getElementById("modal-success").classList.remove("hidden");
 

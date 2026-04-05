@@ -153,8 +153,8 @@ def trip_form(sk: str, trip: dict | None = None):
         col5, col6 = st.columns(2)
         with col5:
             total_seats = st.number_input(
-                "Total de vagas *", min_value=1, max_value=100,
-                value=trip["total_seats"] if is_edit else 8,
+                "Total de vagas *", min_value=1, max_value=200,
+                value=trip["total_seats"] if is_edit else 40,
             )
         with col6:
             price = st.number_input(
@@ -171,7 +171,10 @@ def trip_form(sk: str, trip: dict | None = None):
         else:
             status = "active"
 
-        notes = st.text_area("Observações internas", value=trip.get("notes") or "" if is_edit else "")
+        notes = st.text_area("Observações internas (só visível no admin)",
+            value=trip.get("notes") or "" if is_edit else "")
+        public_notes = st.text_area("Observações públicas (aparece no site para os clientes)",
+            value=trip.get("public_notes") or "" if is_edit else "")
 
         label = "💾 Salvar alterações" if is_edit else "➕ Criar viagem"
         submitted = st.form_submit_button(label, type="primary")
@@ -211,6 +214,7 @@ def trip_form(sk: str, trip: dict | None = None):
             "price": float(price),
             "status": status,
             "notes": notes.strip() or None,
+            "public_notes": public_notes.strip() or None,
         }
         return True, form_data, valid_stops
 
@@ -271,18 +275,42 @@ for trip in trips:
         if trip.get("arrival_at"):
             st.markdown(f"**Chegada prevista:** {fmt_dt(trip['arrival_at'])}")
         if trip.get("notes"):
-            st.markdown(f"**Observações:** {trip['notes']}")
+            st.markdown(f"**Obs. internas:** {trip['notes']}")
+        if trip.get("public_notes"):
+            st.markdown(f"**Obs. públicas:** {trip['public_notes']}")
 
         col_edit, col_cancel, col_complete = st.columns([2, 1, 1])
         with col_cancel:
             if trip["status"] == "active":
                 if st.button("❌ Cancelar", key=f"cancel_{trip['id']}"):
-                    db.table("trips").update({"status": "cancelled"}).eq("id", trip["id"]).execute()
+                    st.session_state[f"confirm_cancel_{trip['id']}"] = True
                     st.rerun()
         with col_complete:
             if trip["status"] == "active":
                 if st.button("🏁 Concluir", key=f"complete_{trip['id']}"):
                     db.table("trips").update({"status": "completed"}).eq("id", trip["id"]).execute()
+                    st.rerun()
+
+        # Confirmação de cancelamento
+        if st.session_state.get(f"confirm_cancel_{trip['id']}"):
+            pax = db.table("passengers").select("seat_status").eq("trip_id", trip["id"]).execute().data
+            n_paid = sum(1 for p in pax if p["seat_status"] == "paid")
+            n_res  = sum(1 for p in pax if p["seat_status"] == "reserved")
+            st.warning(
+                f"⚠️ **Confirmar cancelamento?**\n\n"
+                f"Esta viagem tem **{n_paid} passageiro(s) pago(s)** e "
+                f"**{n_res} reservado(s)**. "
+                f"O cancelamento não exclui os passageiros — você precisará contatá-los manualmente."
+            )
+            cc1, cc2 = st.columns(2)
+            with cc1:
+                if st.button("✅ Sim, cancelar", key=f"cancel_yes_{trip['id']}", type="primary"):
+                    db.table("trips").update({"status": "cancelled"}).eq("id", trip["id"]).execute()
+                    st.session_state.pop(f"confirm_cancel_{trip['id']}", None)
+                    st.rerun()
+            with cc2:
+                if st.button("Voltar", key=f"cancel_no_{trip['id']}"):
+                    st.session_state.pop(f"confirm_cancel_{trip['id']}", None)
                     st.rerun()
 
         edit_key = f"edit_{trip['id']}"

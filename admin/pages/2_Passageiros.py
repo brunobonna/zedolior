@@ -61,13 +61,20 @@ def passenger_form(stops: list[str], passenger: dict | None = None, key_prefix: 
                 value=date.fromisoformat(passenger["birth_date"]) if is_edit else date(1990, 1, 1),
                 min_value=date(1900, 1, 1), max_value=date.today())
 
+        # Embarque: qualquer cidade EXCETO o destino final (última parada)
+        # Desembarque: qualquer cidade EXCETO a origem (primeira parada)
+        boarding_options  = stops[:-1] if len(stops) > 1 else stops
+        alighting_options = stops[1:]  if len(stops) > 1 else stops
+
         col3, col4 = st.columns(2)
         with col3:
-            boarding_idx = stops.index(passenger["boarding_city"]) if (is_edit and passenger["boarding_city"] in stops) else 0
-            boarding_city = st.selectbox("Cidade de embarque *", options=stops, index=boarding_idx)
+            boarding_def = passenger["boarding_city"] if (is_edit and passenger["boarding_city"] in boarding_options) else boarding_options[0]
+            boarding_city = st.selectbox("Cidade de embarque *", options=boarding_options,
+                index=boarding_options.index(boarding_def))
         with col4:
-            alighting_idx = stops.index(passenger["alighting_city"]) if (is_edit and passenger["alighting_city"] in stops) else len(stops) - 1
-            alighting_city = st.selectbox("Cidade de desembarque *", options=stops, index=alighting_idx)
+            alighting_def = passenger["alighting_city"] if (is_edit and passenger["alighting_city"] in alighting_options) else alighting_options[-1]
+            alighting_city = st.selectbox("Cidade de desembarque *", options=alighting_options,
+                index=alighting_options.index(alighting_def))
 
         col5, col6 = st.columns(2)
         with col5:
