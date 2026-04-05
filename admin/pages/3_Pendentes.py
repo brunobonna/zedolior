@@ -67,8 +67,10 @@ with tab_pending:
             trip_label = f"{trip_info.get('origin', '?')} → {trip_info.get('destination', '?')} | {fmt_dt(trip_info.get('departure_at'))}"
             stops = load_stops(req["trip_id"])
             passengers_json = req.get("passengers_json") or []
-
-            with st.expander(f"📋 {trip_label} — {req['passenger_count']} passageiro(s) — {fmt_dt(req['submitted_at'])}", expanded=True):
+            first_name = passengers_json[0].get("name", "?") if passengers_json else "?"
+            n_pass = req["passenger_count"]
+            extra = f" +{n_pass - 1} mais" if n_pass > 1 else ""
+            with st.expander(f"📋 {first_name}{extra} | {trip_label} | {fmt_dt(req['submitted_at'])}", expanded=True):
                 st.markdown(f"**Viagem:** {trip_label}")
                 st.markdown(f"**Embarque:** {req['boarding_city']} &nbsp;→&nbsp; **Desembarque:** {req['alighting_city']}")
                 st.markdown(f"**Enviado em:** {fmt_dt(req['submitted_at'])}")
