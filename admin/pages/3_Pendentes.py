@@ -75,8 +75,14 @@ with tab_pending:
             n_pass = req["passenger_count"]
             extra = f" +{n_pass - 1} mais" if n_pass > 1 else ""
             with st.expander(f"📋 {first_name}{extra} | {trip_label} | {fmt_dt(req['submitted_at'])}", expanded=True):
+                # Telefone do solicitante (vem no primeiro passageiro do JSON)
+                contact_phone = ""
+                if passengers_json:
+                    contact_phone = passengers_json[0].get("phone", "")
                 st.markdown(f"**Viagem:** {trip_label}")
                 st.markdown(f"**Embarque:** {req['boarding_city']} &nbsp;→&nbsp; **Desembarque:** {req['alighting_city']}")
+                if contact_phone:
+                    st.markdown(f"📱 **Celular:** {contact_phone}")
                 st.markdown(f"**Enviado em:** {fmt_dt(req['submitted_at'])}")
 
                 st.divider()

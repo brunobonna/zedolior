@@ -44,26 +44,22 @@ try:
 
         st.subheader("Viagens ativas")
 
-        hc = st.columns([3, 2, 1, 1, 1])
-        hc[0].markdown("**Viagem**")
-        hc[1].markdown("**Saída**")
-        hc[2].markdown("**✅ Pagos**")
-        hc[3].markdown("**⏳ Reservados**")
-        hc[4].markdown("**🔔 Pendentes**")
-        st.divider()
-
         for trip in active_trips:
             pax      = [p for p in all_passengers if p["trip_id"] == trip["id"]]
             paid     = sum(1 for p in pax if p["seat_status"] == "paid")
             reserved = sum(1 for p in pax if p["seat_status"] == "reserved")
             pend     = pending_by_trip.get(trip["id"], 0)
+            available = trip["total_seats"] - len(pax)
 
-            rc = st.columns([3, 2, 1, 1, 1])
-            rc[0].write(f"**{trip['origin']} → {trip['destination']}**")
-            rc[1].write(fmt_dt(trip["departure_at"]))
-            rc[2].write(str(paid))
-            rc[3].write(str(reserved))
-            rc[4].write(f"{'🔴 ' if pend > 0 else ''}{pend}")
+            with st.container(border=True):
+                st.markdown(f"**{trip['origin']} → {trip['destination']}**")
+                st.caption(f"📅 {fmt_dt(trip['departure_at'])}")
+                c1, c2, c3, c4, c5 = st.columns(5)
+                c1.metric("🎫 Vagas", trip["total_seats"])
+                c2.metric("🪑 Livres", available)
+                c3.metric("✅ Pagos", paid)
+                c4.metric("⏳ Reserv.", reserved)
+                c5.metric("🔔 Pend.", pend)
 
 except Exception as e:
     st.info("Configure as credenciais do Supabase em `.streamlit/secrets.toml` para conectar ao banco de dados.")

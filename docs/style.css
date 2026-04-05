@@ -254,6 +254,8 @@ body {
 .success-box p { margin-bottom: 12px; font-size: 1rem; }
 
 /* ── Submit area ─────────────────────────────────────────────── */
+.field-hint { font-weight: 400; color: var(--muted); font-size: 0.82em; }
+
 .submit-hint {
   font-size: 0.82rem;
   color: var(--muted);

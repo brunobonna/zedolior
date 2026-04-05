@@ -327,7 +327,7 @@ for trip in trips:
         col_edit, col_cancel, col_complete = st.columns([2, 1, 1])
         with col_cancel:
             if trip["status"] == "active":
-                if st.button("❌ Cancelar", key=f"cancel_{trip['id']}"):
+                if st.button("❌ Cancelar viagem", key=f"cancel_{trip['id']}"):
                     st.session_state[f"confirm_cancel_{trip['id']}"] = True
                     st.rerun()
         with col_complete:
