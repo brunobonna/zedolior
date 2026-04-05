@@ -339,30 +339,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const submitBtn = document.getElementById("submit-btn");
     submitBtn.disabled = true;
-    submitBtn.textContent = "Enviando...";
+    submitBtn.textContent = "Abrindo WhatsApp...";
 
-    try {
-      await sbPost("pending_requests", {
-        trip_id: currentTrip.id,
-        boarding_city: boardingCity,
-        alighting_city: alightingCity,
-        passenger_count: passengers.length,
-        passengers_json: passengers,
-      });
+    // ⚠️ Abre o WhatsApp ANTES de qualquer await, ainda no contexto
+    // do gesto do usuário — necessário para não ser bloqueado no mobile.
+    const waUrl = buildWhatsAppUrl(currentTrip, boardingCity, alightingCity, passengers);
+    window.location.href = waUrl;
 
-      const waUrl = buildWhatsAppUrl(currentTrip, boardingCity, alightingCity, passengers);
-      window.open(waUrl, "_blank");
+    // Envia para o Supabase em segundo plano (não bloqueia a abertura do WA)
+    sbPost("pending_requests", {
+      trip_id: currentTrip.id,
+      boarding_city: boardingCity,
+      alighting_city: alightingCity,
+      passenger_count: passengers.length,
+      passengers_json: passengers,
+    }).catch(err => console.error("Erro ao registrar solicitação:", err));
 
-      document.getElementById("reservation-form").classList.add("hidden");
-      document.getElementById("modal-success").classList.remove("hidden");
-
-    } catch (err) {
-      errorBox.textContent = "Erro ao enviar solicitação. Tente novamente ou entre em contato pelo WhatsApp diretamente.";
-      errorBox.classList.remove("hidden");
-      console.error(err);
-    } finally {
-      submitBtn.disabled = false;
-      submitBtn.textContent = "📱 Confirmar e abrir WhatsApp";
-    }
-  });
-});
+    document.getElementById("reservation-form").classList.add("hidden");
+    document.getElementById("modal-success").classList.remove("hidden");
+    submitBtn.disabled = false;
+    submitBtn.textContent = "📱 Confirmar e abrir WhatsApp";
+  }); // form submit
+}); // DOMContentLoaded
