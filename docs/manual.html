@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Manual de Uso — Zé do Lior Viagens</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    /* ── Manual styles ───────────────────────────────────────── */
+    .man-section {
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 24px 20px;
+      margin-bottom: 20px;
+    }
+    .man-section h2 {
+      font-size: 1.15rem;
+      color: var(--brand-dk);
+      margin-bottom: 16px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #e8f5ee;
+    }
+    .man-section h3 {
+      font-size: 1rem;
+      color: var(--text);
+      margin: 18px 0 10px;
+    }
+    .man-section p, .man-section li {
+      font-size: 0.97rem;
+      line-height: 1.65;
+      margin-bottom: 6px;
+    }
+    .man-section ol, .man-section ul {
+      padding-left: 22px;
+    }
+    .man-section li { margin-bottom: 8px; }
+
+    /* ── Index ───────────────────────────────────────────────── */
+    .man-index {
+      background: #eef7f2;
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      margin-bottom: 20px;
+    }
+    .man-index h2 { font-size: 1rem; color: var(--brand-dk); margin-bottom: 12px; }
+    .man-index a {
+      display: block;
+      padding: 7px 0;
+      color: var(--brand-dk);
+      text-decoration: none;
+      font-size: 0.95rem;
+      border-bottom: 1px solid #d0ead8;
+    }
+    .man-index a:last-child { border-bottom: none; }
+    .man-index a:hover { color: var(--brand); }
+
+    /* ── Callout boxes ───────────────────────────────────────── */
+    .callout {
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin: 14px 0;
+      font-size: 0.93rem;
+      line-height: 1.6;
+    }
+    .callout-tip     { background: #fffbea; border-left: 4px solid var(--accent); }
+    .callout-warning { background: #fff3cd; border-left: 4px solid #e07b00; }
+    .callout-danger  { background: #ffe5e5; border-left: 4px solid #c00; }
+    .callout-info    { background: #eef7f2; border-left: 4px solid var(--brand); }
+
+    /* ── Fake buttons ────────────────────────────────────────── */
+    .fake-btn {
+      display: inline-block;
+      padding: 5px 14px;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      vertical-align: middle;
+    }
+    .fake-btn-green  { background: #d4edda; color: #155724; }
+    .fake-btn-yellow { background: #fff3cd; color: #856404; }
+    .fake-btn-red    { background: #ffe5e5; color: #721c24; }
+    .fake-btn-gray   { background: #f0f0f0; color: #333; }
+    .fake-btn-blue   { background: #cce5ff; color: #004085; }
+
+    /* ── Step list ───────────────────────────────────────────── */
+    .steps { counter-reset: step; list-style: none; padding-left: 0; }
+    .steps li {
+      counter-increment: step;
+      padding: 10px 12px 10px 44px;
+      border-radius: 8px;
+      background: #f9f9f9;
+      margin-bottom: 8px;
+      position: relative;
+    }
+    .steps li::before {
+      content: counter(step);
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: var(--brand);
+      color: #fff;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+
+    /* ── Roles ───────────────────────────────────────────────── */
+    .role-cards { display: flex; flex-direction: column; gap: 12px; }
+    .role-card {
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+    }
+    .role-card.monitor { border-color: #1565c0; }
+    .role-card.admin   { border-color: var(--brand); }
+    .role-card h3 { margin: 0 0 6px; font-size: 1rem; }
+    .role-card.monitor h3 { color: #1565c0; }
+    .role-card.admin h3   { color: var(--brand-dk); }
+    .role-card p { margin: 0; font-size: 0.92rem; color: var(--muted); }
+
+    /* ── Parts of system ─────────────────────────────────────── */
+    .sys-part {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .sys-part:last-child { border-bottom: none; padding-bottom: 0; }
+    .sys-icon { font-size: 1.6rem; flex-shrink: 0; margin-top: 2px; }
+    .sys-part h3 { margin: 0 0 4px; font-size: 0.97rem; }
+    .sys-part p  { margin: 0; font-size: 0.9rem; color: var(--muted); }
+
+    /* ── Flow diagram ────────────────────────────────────────── */
+    .flow { display: flex; flex-direction: column; gap: 0; }
+    .flow-step {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 0;
+    }
+    .flow-arrow {
+      text-align: center;
+      color: var(--brand);
+      font-size: 1.2rem;
+      padding: 0 0 0 18px;
+    }
+    .flow-box {
+      background: #eef7f2;
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 0.9rem;
+      flex: 1;
+    }
+    .flow-box.highlight { background: var(--brand); color: #fff; font-weight: 600; }
+
+    /* ── Back to top ─────────────────────────────────────────── */
+    .back-top {
+      display: block;
+      text-align: right;
+      font-size: 0.82rem;
+      color: var(--muted);
+      text-decoration: none;
+      margin-top: 12px;
+    }
+    .back-top:hover { color: var(--brand); }
+
+    /* ── Header override for manual ──────────────────────────── */
+    .man-header { padding: 20px 0 18px; }
+    .man-header h1 { font-size: 1.5rem; }
+    .man-subtitle { font-size: 0.92rem; opacity: .8; margin-top: 4px; }
+  </style>
+</head>
+<body>
+
+  <header class="site-header man-header">
+    <div class="container">
+      <h1>🚐 Zé do Lior Viagens</h1>
+      <p class="man-subtitle">Manual de Uso do Sistema</p>
+    </div>
+  </header>
+
+  <main class="container" style="padding-top: 24px; padding-bottom: 48px;">
+
+    <!-- ÍNDICE -->
+    <nav class="man-index" id="topo">
+      <h2>📋 O que tem neste manual</h2>
+      <a href="#papeis">1. Quem usa o quê</a>
+      <a href="#partes">2. As três partes do sistema</a>
+      <a href="#fluxo">3. Fluxo do dia a dia</a>
+      <a href="#pendentes">4. Aprovar um pedido de reserva</a>
+      <a href="#passageiros">5. Ver e gerenciar passageiros</a>
+      <a href="#viagem-nova">6. Criar uma nova viagem</a>
+      <a href="#exportar">7. Gerar lista para a empresa de ônibus</a>
+      <a href="#encerrar">8. Cancelar ou concluir uma viagem</a>
+      <a href="#monitor">9. Tela de acompanhamento (somente leitura)</a>
+    </nav>
+
+    <!-- 1. PAPÉIS -->
+    <section class="man-section" id="papeis">
+      <h2>1. Quem usa o quê</h2>
+      <div class="role-cards">
+        <div class="role-card monitor">
+          <h3>👁️ Acompanhamento</h3>
+          <p>Acessa a <strong>tela de monitor</strong> para ver em tempo real quantas pessoas estão em cada viagem, quem pagou e quem está reservado. Pode clicar no nome para ver o telefone e abrir o WhatsApp. <strong>Não altera nada.</strong></p>
+        </div>
+        <div class="role-card admin">
+          <h3>⚙️ Operação (Admin)</h3>
+          <p>Acessa o <strong>painel administrativo</strong> para aprovar pedidos, gerenciar passageiros, criar viagens e exportar listas. É quem efetivamente opera o sistema.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. PARTES DO SISTEMA -->
+    <section class="man-section" id="partes">
+      <h2>2. As três partes do sistema</h2>
+
+      <div class="sys-part">
+        <div class="sys-icon">🌐</div>
+        <div>
+          <h3>Site público</h3>
+          <p>Onde os <strong>clientes</strong> veem as viagens disponíveis e fazem pedidos de reserva. O cliente preenche os dados e o WhatsApp abre automaticamente com a mensagem pronta.</p>
+        </div>
+      </div>
+
+      <div class="sys-part">
+        <div class="sys-icon">⚙️</div>
+        <div>
+          <h3>Painel administrativo</h3>
+          <p>Onde a <strong>operação</strong> acontece: aprovar pedidos, gerenciar passageiros, criar e encerrar viagens. Acesso por senha.</p>
+          <div class="callout callout-tip">
+            💡 <strong>Link:</strong> salve o endereço do painel admin nos favoritos do celular para acessar rápido.
+          </div>
+        </div>
+      </div>
+
+      <div class="sys-part">
+        <div class="sys-icon">👁️</div>
+        <div>
+          <h3>Tela de monitor</h3>
+          <p>Tela simples de <strong>acompanhamento</strong> com senha própria. Mostra as viagens ativas e o status dos passageiros. Nada pode ser alterado por aqui.</p>
+          <div class="callout callout-tip">
+            💡 <strong>Acesso:</strong> o endereço termina em <code>/monitor.html</code> — use a senha do monitor para entrar.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. FLUXO DO DIA A DIA -->
+    <section class="man-section" id="fluxo">
+      <h2>3. Fluxo do dia a dia</h2>
+      <p>Toda reserva começa no site e segue este caminho:</p>
+
+      <div class="flow">
+        <div class="flow-step">
+          <div class="flow-box">🌐 Cliente acessa o site e preenche os dados dos passageiros</div>
+        </div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-step">
+          <div class="flow-box">📱 WhatsApp abre com a mensagem pronta — cliente envia para o motorista</div>
+        </div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-step">
+          <div class="flow-box highlight">⚙️ Admin → aba Pendentes → revisar e aprovar o pedido</div>
+        </div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-step">
+          <div class="flow-box">⏳ Passageiro entra na lista como <strong>Reservado</strong></div>
+        </div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-step">
+          <div class="flow-box">✅ Após pagamento: Admin → aba Passageiros → mudar status para <strong>Pago</strong></div>
+        </div>
+      </div>
+
+      <div class="callout callout-info" style="margin-top: 16px;">
+        📌 O sistema <strong>não processa pagamentos</strong> — a confirmação de pagamento é feita fora do sistema (dinheiro, PIX, etc.) e depois você atualiza o status manualmente.
+      </div>
+    </section>
+
+    <!-- 4. APROVAR PEDIDOS -->
+    <section class="man-section" id="pendentes">
+      <h2>4. Aprovar um pedido de reserva</h2>
+      <p>Quando um cliente faz um pedido pelo site, ele aparece na aba <strong>📬 Pendentes</strong> do painel admin.</p>
+
+      <h3>Como fazer:</h3>
+      <ol class="steps">
+        <li>No painel admin, clique em <strong>📬 Pendentes</strong> no menu</li>
+        <li>Veja a lista de pedidos aguardando aprovação</li>
+        <li>Clique em <span class="fake-btn fake-btn-green">✅ Aprovar / Editar e confirmar</span> no pedido</li>
+        <li>Revise os dados do passageiro (nome, CPF, telefone, embarque, desembarque)</li>
+        <li>Corrija qualquer dado errado se necessário</li>
+        <li>Clique em <span class="fake-btn fake-btn-green">✅ Confirmar aprovação</span></li>
+      </ol>
+
+      <p>O passageiro é adicionado automaticamente à viagem com status <strong>Reservado</strong>.</p>
+
+      <h3>Se precisar recusar um pedido:</h3>
+      <ol class="steps">
+        <li>Clique em <span class="fake-btn fake-btn-red">❌ Rejeitar</span></li>
+        <li>Escreva o motivo (opcional)</li>
+        <li>Confirme a rejeição</li>
+      </ol>
+
+      <div class="callout callout-tip">
+        💡 Se não quiser aprovar agora, clique em <span class="fake-btn fake-btn-gray">⏭️ Avaliar depois</span> — o pedido continua na fila.
+      </div>
+
+      <div class="callout callout-warning">
+        ⚠️ Sempre confirme o pagamento por WhatsApp antes de mudar o status de <strong>Reservado</strong> para <strong>Pago</strong>.
+      </div>
+
+      <a href="#topo" class="back-top">↑ Voltar ao índice</a>
+    </section>
+
+    <!-- 5. PASSAGEIROS -->
+    <section class="man-section" id="passageiros">
+      <h2>5. Ver e gerenciar passageiros de uma viagem</h2>
+      <p>Na aba <strong>👥 Passageiros</strong> você vê todos os confirmados em cada viagem.</p>
+
+      <h3>Para ver os passageiros:</h3>
+      <ol class="steps">
+        <li>Clique em <strong>👥 Passageiros</strong> no menu</li>
+        <li>Escolha a viagem no seletor no topo da página</li>
+        <li>Veja os contadores: total de vagas, disponíveis, pagos, reservados e pendentes</li>
+        <li>A lista de passageiros aparece abaixo — clique em um nome para ver os detalhes</li>
+      </ol>
+
+      <h3>Marcar passageiro como Pago:</h3>
+      <ol class="steps">
+        <li>Clique no nome do passageiro para expandir</li>
+        <li>No campo <strong>Status da vaga</strong>, mude de <span class="fake-btn fake-btn-yellow">⏳ Reservado</span> para <span class="fake-btn fake-btn-green">✅ Pago</span></li>
+        <li>O sistema salva automaticamente — não precisa clicar em nenhum botão</li>
+      </ol>
+
+      <h3>Abrir WhatsApp do passageiro:</h3>
+      <p>Clique em <span class="fake-btn fake-btn-green">💬 WhatsApp (número)</span> dentro do card do passageiro.</p>
+
+      <h3>Adicionar passageiro manualmente:</h3>
+      <ol class="steps">
+        <li>Clique em <span class="fake-btn fake-btn-blue">➕ Adicionar passageiro</span></li>
+        <li>Preencha os dados e clique em <strong>Adicionar</strong></li>
+      </ol>
+
+      <div class="callout callout-info">
+        📌 Passageiros adicionados manualmente entram com status <strong>Reservado</strong> por padrão. Lembre de mudar para Pago quando receber o pagamento.
+      </div>
+
+      <a href="#topo" class="back-top">↑ Voltar ao índice</a>
+    </section>
+
+    <!-- 6. CRIAR VIAGEM -->
+    <section class="man-section" id="viagem-nova">
+      <h2>6. Criar uma nova viagem</h2>
+
+      <ol class="steps">
+        <li>Na aba <strong>🗺️ Viagens</strong>, clique em <span class="fake-btn fake-btn-blue">➕ Nova viagem</span></li>
+        <li>Preencha a <strong>cidade de origem</strong> e a <strong>cidade de destino</strong></li>
+        <li>Se houver paradas intermediárias, clique em <span class="fake-btn fake-btn-gray">➕ Parada</span> e adicione as cidades na ordem do trajeto</li>
+        <li>Defina a <strong>data e horário de saída</strong></li>
+        <li>Informe o <strong>total de vagas</strong> e o <strong>preço por pessoa</strong></li>
+        <li>Clique em <span class="fake-btn fake-btn-green">➕ Criar viagem</span></li>
+      </ol>
+
+      <h3>Observações</h3>
+      <ul>
+        <li><strong>Observações internas:</strong> só aparecem no painel admin — use para lembretes da operação</li>
+        <li><strong>Observações públicas:</strong> aparecem no site para os clientes — use para avisos importantes (ex: "ônibus executivo", "com parada para almoço")</li>
+      </ul>
+
+      <div class="callout callout-tip">
+        💡 A viagem aparece imediatamente no site público assim que for criada com status <strong>Ativa</strong>.
+      </div>
+
+      <a href="#topo" class="back-top">↑ Voltar ao índice</a>
+    </section>
+
+    <!-- 7. EXPORTAR LISTA -->
+    <section class="man-section" id="exportar">
+      <h2>7. Gerar lista para a empresa de ônibus</h2>
+      <p>Antes de cada viagem, você pode gerar uma lista com todos os passageiros confirmados para enviar à empresa.</p>
+
+      <ol class="steps">
+        <li>Na aba <strong>🗺️ Viagens</strong>, encontre a viagem desejada e clique nela para expandir</li>
+        <li>Clique em <span class="fake-btn fake-btn-gray">📋 Lista para empresa de ônibus</span></li>
+        <li>Uma caixa de texto aparece com a lista formatada</li>
+        <li>Toque na caixa, selecione tudo (<strong>Ctrl+A</strong> no computador ou segure no celular) e copie</li>
+        <li>Cole no WhatsApp ou e-mail e envie para a empresa</li>
+      </ol>
+
+      <div class="callout callout-info">
+        📌 A lista inclui apenas passageiros com status <strong>Pago</strong> ou <strong>Reservado</strong>. Passageiros pendentes não entram.
+      </div>
+
+      <a href="#topo" class="back-top">↑ Voltar ao índice</a>
+    </section>
+
+    <!-- 8. CANCELAR / CONCLUIR -->
+    <section class="man-section" id="encerrar">
+      <h2>8. Cancelar ou concluir uma viagem</h2>
+
+      <h3>Diferença entre cancelar e concluir</h3>
+      <ul>
+        <li><span class="fake-btn fake-btn-red">❌ Cancelar viagem</span> — a viagem não acontecerá. Ela sai do site público, mas os passageiros ficam registrados no sistema.</li>
+        <li><span class="fake-btn fake-btn-gray">🏁 Concluir viagem</span> — a viagem já aconteceu. Ela é arquivada e sai do site público.</li>
+      </ul>
+
+      <h3>Como fazer:</h3>
+      <ol class="steps">
+        <li>Na aba <strong>🗺️ Viagens</strong>, clique na viagem para expandir</li>
+        <li>Clique no botão desejado (Cancelar ou Concluir)</li>
+        <li>Uma mensagem de confirmação aparece com o número de passageiros afetados</li>
+        <li>Confirme clicando em <span class="fake-btn fake-btn-green">✅ Sim</span></li>
+      </ol>
+
+      <div class="callout callout-danger">
+        ⚠️ <strong>Atenção:</strong> ao cancelar uma viagem com passageiros pagos, o sistema <strong>não avisa os clientes automaticamente</strong>. Você precisará entrar em contato com cada um pelo WhatsApp.
+      </div>
+
+      <a href="#topo" class="back-top">↑ Voltar ao índice</a>
+    </section>
+
+    <!-- 9. MONITOR -->
+    <section class="man-section" id="monitor">
+      <h2>9. Tela de acompanhamento (somente leitura)</h2>
+      <p>A tela de monitor permite acompanhar as viagens em tempo real, sem precisar acessar o painel admin.</p>
+
+      <h3>Como acessar:</h3>
+      <ol class="steps">
+        <li>Abra o link da tela de monitor no navegador (o endereço termina em <code>/monitor.html</code>)</li>
+        <li>Digite a senha do monitor e clique em <strong>Entrar</strong></li>
+      </ol>
+
+      <h3>O que você pode ver:</h3>
+      <ul>
+        <li>Todas as viagens ativas com data e rota</li>
+        <li>Contadores: <span class="fake-btn fake-btn-green">✅ Pagos</span> <span class="fake-btn fake-btn-yellow">⏳ Reservados</span> <span class="fake-btn fake-btn-red">🔔 Pendentes</span></li>
+        <li>Ao clicar em um contador, a lista de nomes aparece</li>
+        <li>Ao clicar em um nome, aparecem os dados do passageiro</li>
+        <li>Se tiver telefone, o botão de WhatsApp abre a conversa direto</li>
+      </ul>
+
+      <div class="callout callout-info">
+        📌 A tela de monitor é <strong>somente para consulta</strong>. Para aprovar pedidos ou alterar dados, use o painel admin.
+      </div>
+
+      <div class="callout callout-tip">
+        💡 Salve o link nos favoritos do celular — você pode adicionar na tela inicial como se fosse um aplicativo.
+      </div>
+
+      <a href="#topo" class="back-top">↑ Voltar ao índice</a>
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>Zé do Lior Viagens — Manual de Uso</p>
+    </div>
+  </footer>
+
+</body>
+</html>
