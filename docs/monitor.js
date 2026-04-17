@@ -48,8 +48,9 @@ function isLoggedIn() {
   return sessionStorage.getItem("monitor_auth") === "1";
 }
 
-function login(password) {
-  if (password.toLowerCase().trim() === window.MONITOR_PASSWORD.toLowerCase()) {
+async function login(password) {
+  const ok = await sbRpc("check_monitor_access", { pwd: password.toLowerCase().trim() });
+  if (ok === true) {
     sessionStorage.setItem("monitor_auth", "1");
     return true;
   }
@@ -220,16 +221,28 @@ document.addEventListener("DOMContentLoaded", () => {
     loadDashboard();
   }
 
-  document.getElementById("login-form").addEventListener("submit", e => {
+  document.getElementById("login-form").addEventListener("submit", async e => {
     e.preventDefault();
-    const pw = document.getElementById("login-password").value;
-    if (login(pw)) {
-      document.getElementById("login-error").classList.add("hidden");
-      loadDashboard();
-    } else {
+    const btn = document.querySelector("#login-form button[type='submit']");
+    const pw  = document.getElementById("login-password").value;
+    btn.disabled = true;
+    btn.textContent = "Verificando...";
+    try {
+      const ok = await login(pw);
+      if (ok) {
+        document.getElementById("login-error").classList.add("hidden");
+        loadDashboard();
+      } else {
+        document.getElementById("login-error").classList.remove("hidden");
+        document.getElementById("login-password").value = "";
+        document.getElementById("login-password").focus();
+      }
+    } catch {
+      document.getElementById("login-error").textContent = "Erro de conexão. Tente novamente.";
       document.getElementById("login-error").classList.remove("hidden");
-      document.getElementById("login-password").value = "";
-      document.getElementById("login-password").focus();
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Entrar";
     }
   });
 
