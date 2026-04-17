@@ -175,6 +175,7 @@ n_paid     = sum(1 for p in passengers if p["seat_status"] == "paid")
 n_reserved = sum(1 for p in passengers if p["seat_status"] == "reserved")
 n_pending  = len(db.table("pending_requests").select("id").eq("trip_id", selected_id).eq("status", "pending").execute().data)
 n_occupied = sum(1 for p in passengers if p.get("seat_type", "poltrona") != "colo")
+available  = trip["total_seats"] - n_occupied
 
 # Metrics
 col1, col2, col3, col4, col5 = st.columns(5)
