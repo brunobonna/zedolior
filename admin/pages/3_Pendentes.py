@@ -46,6 +46,15 @@ def is_minor(birth_date_str: str) -> bool:
     except Exception:
         return False
 
+def is_toddler(birth_date_str: str) -> bool:
+    try:
+        bd = date.fromisoformat(birth_date_str)
+        today = date.today()
+        age = today.year - bd.year - ((today.month, today.day) < (bd.month, bd.day))
+        return age < 7
+    except Exception:
+        return False
+
 # ── Main UI ───────────────────────────────────────────────────
 
 st.title("📬 Solicitações Pendentes")
@@ -113,7 +122,10 @@ with tab_pending:
                             st.markdown(f"---\n**Passageiro {i + 1}**")
                             birth_str = p_raw.get("birth_date", "")
                             minor = is_minor(birth_str)
-                            if minor:
+                            toddler = is_toddler(birth_str)
+                            if toddler:
+                                st.markdown("🔵 **Menor de 7 anos**")
+                            elif minor:
                                 st.markdown("🔴 **Menor de idade**")
 
                             c1, c2 = st.columns(2)
@@ -131,6 +143,20 @@ with tab_pending:
                                     key=f"pbirth_{req['id']}_{i}")
                             p_phone = st.text_input("Celular", value=p_raw.get("phone", ""),
                                 placeholder="(21) 99999-9999", key=f"pphone_{req['id']}_{i}")
+
+                            if toddler:
+                                raw_seat_type = p_raw.get("seat_type", "poltrona")
+                                seat_type_idx = 1 if raw_seat_type == "colo" else 0
+                                p_seat_type = st.selectbox(
+                                    "Tipo de assento",
+                                    ["poltrona", "colo"],
+                                    index=seat_type_idx,
+                                    format_func=lambda s: "Poltrona" if s == "poltrona" else "Colo do acompanhante (não ocupa vaga)",
+                                    key=f"pseattype_{req['id']}_{i}",
+                                )
+                            else:
+                                p_seat_type = "poltrona"
+
                             p_notes = st.text_area("Observações (bagagem, etc.)",
                                 value=p_raw.get("notes", ""), key=f"pnotes_{req['id']}_{i}", height=60)
 
@@ -140,6 +166,7 @@ with tab_pending:
                                 "rg": p_rg or None,
                                 "birth_date": p_birth.isoformat(),
                                 "is_minor": is_minor(p_birth.isoformat()),
+                                "seat_type": p_seat_type,
                                 "phone": p_phone.strip() or None,
                                 "notes": p_notes or None,
                             })

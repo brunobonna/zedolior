@@ -41,6 +41,15 @@ def is_minor(birth_date_str: str) -> bool:
     except Exception:
         return False
 
+def is_toddler(birth_date_str: str) -> bool:
+    try:
+        bd = date.fromisoformat(birth_date_str)
+        today = date.today()
+        age = today.year - bd.year - ((today.month, today.day) < (bd.month, bd.day))
+        return age < 7
+    except Exception:
+        return False
+
 STATUS_OPTIONS = ["reserved", "paid"]
 STATUS_LABELS = {"reserved": "⏳ Reservado", "paid": "✅ Pago"}
 STATUS_COLORS = {"reserved": "🟡", "paid": "🟢"}
@@ -89,6 +98,20 @@ def passenger_form(stops: list[str], passenger: dict | None = None, key_prefix: 
             phone = st.text_input("Celular", value=passenger.get("phone") or "" if is_edit else "",
                 placeholder="(21) 99999-9999")
 
+        birth_iso = birth_date.isoformat()
+        if is_toddler(birth_iso):
+            current_seat_type = passenger.get("seat_type", "poltrona") if is_edit else "poltrona"
+            seat_type = st.selectbox(
+                "Tipo de assento (menor de 7 anos)",
+                ["poltrona", "colo"],
+                index=["poltrona", "colo"].index(current_seat_type) if current_seat_type in ["poltrona", "colo"] else 0,
+                format_func=lambda s: "Poltrona" if s == "poltrona" else "Colo do acompanhante (não ocupa vaga)",
+            )
+        else:
+            seat_type = passenger.get("seat_type", "poltrona") if is_edit else "poltrona"
+            if seat_type == "colo":
+                st.info("Passageiro com assento 'colo'. Altere a data de nascimento para ajustar.")
+
         group_leader = st.text_input("Responsável pelo grupo (deixe vazio se viaja sozinho)",
             value=passenger.get("group_leader") or "" if is_edit else "",
             placeholder="Nome do passageiro principal do grupo")
@@ -122,6 +145,7 @@ def passenger_form(stops: list[str], passenger: dict | None = None, key_prefix: 
             "boarding_city": boarding_city,
             "alighting_city": alighting_city,
             "seat_status": seat_status,
+            "seat_type": seat_type,
             "notes": notes.strip() or None,
         }
 
@@ -198,10 +222,11 @@ st.subheader(f"Passageiros ({len(passengers)})")
 
 for p in passengers:
     minor_badge = ' <span class="badge-minor">Menor</span>' if p.get("is_minor") else ""
+    colo_badge  = ' <span class="badge-reserved">Colo</span>' if p.get("seat_type") == "colo" else ""
     status_badge_class = "badge-paid" if p["seat_status"] == "paid" else "badge-reserved"
     status_text = STATUS_LABELS.get(p["seat_status"], p["seat_status"])
     group_suffix = f' <span style="color:#888;font-size:0.85em">({p["group_leader"]})</span>' if p.get("group_leader") else ""
-    header_html = f'<b>{p["name"]}</b>{group_suffix}{minor_badge} &nbsp; <span class="{status_badge_class}">{status_text}</span>'
+    header_html = f'<b>{p["name"]}</b>{group_suffix}{minor_badge}{colo_badge} &nbsp; <span class="{status_badge_class}">{status_text}</span>'
     expander_label = f"{STATUS_COLORS.get(p['seat_status'], '')} {p['name']}" + (f" ({p['group_leader']})" if p.get("group_leader") else "")
 
     with st.expander(expander_label, expanded=False):

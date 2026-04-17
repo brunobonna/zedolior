@@ -21,7 +21,7 @@ def load_stops(trip_id: str):
     return db.table("trip_stops").select("*").eq("trip_id", trip_id).order("stop_order").execute().data
 
 def confirmed_count(trip_id: str) -> int:
-    return len(db.table("passengers").select("id").eq("trip_id", trip_id).execute().data)
+    return len(db.table("passengers").select("id").eq("trip_id", trip_id).neq("seat_type", "colo").execute().data)
 
 def cities_in_use(trip_id: str) -> set:
     rows = db.table("passengers").select("boarding_city, alighting_city").eq("trip_id", trip_id).execute().data
@@ -258,7 +258,7 @@ st.caption(f"{len(trips)} viagem(ns) encontrada(s)")
 
 # Carrega passageiros e pendentes de todas as viagens visíveis em batch
 trip_ids = [t["id"] for t in trips]
-all_pax = db.table("passengers").select("id, trip_id, name, seat_status, created_at").in_("trip_id", trip_ids).order("created_at").execute().data if trip_ids else []
+all_pax = db.table("passengers").select("id, trip_id, name, seat_status, seat_type, group_leader, created_at").in_("trip_id", trip_ids).order("created_at").execute().data if trip_ids else []
 all_pending = db.table("pending_requests").select("id, trip_id, passengers_json, submitted_at").eq("status", "pending").in_("trip_id", trip_ids).order("submitted_at").execute().data if trip_ids else []
 
 def pax_for_trip(tid):
@@ -325,6 +325,40 @@ for trip in trips:
             st.caption(f"🔒 Obs. internas: {trip['notes']}")
         if trip.get("public_notes"):
             st.caption(f"🌐 Obs. públicas: {trip['public_notes']}")
+
+        # ── Lista para empresa de ônibus ──────────────────────
+        export_key = f"export_{trip['id']}"
+        if st.button("📋 Lista para empresa de ônibus", key=f"export_btn_{trip['id']}"):
+            st.session_state[export_key] = not st.session_state.get(export_key, False)
+
+        if st.session_state.get(export_key):
+            full_pax = db.table("passengers").select("*").eq("trip_id", trip["id"]).order("created_at").execute().data
+            conf_pax = [p for p in full_pax if p["seat_status"] in ("paid", "reserved")]
+            lines = []
+            lines.append(f"VIAGEM: {stop_cities}")
+            lines.append(f"DATA DE SAÍDA: {fmt_dt(trip['departure_at'])}")
+            if trip.get("arrival_at"):
+                lines.append(f"CHEGADA PREVISTA: {fmt_dt(trip['arrival_at'])}")
+            lines.append(f"TOTAL DE PASSAGEIROS: {len(conf_pax)}")
+            lines.append("")
+            lines.append("LISTA DE PASSAGEIROS")
+            lines.append("-" * 40)
+            for idx, p in enumerate(conf_pax, 1):
+                from datetime import date as _date
+                try:
+                    bd_fmt = _date.fromisoformat(p["birth_date"]).strftime("%d/%m/%Y")
+                except Exception:
+                    bd_fmt = p.get("birth_date", "—")
+                status_txt = "PAGO" if p["seat_status"] == "paid" else "RESERVADO"
+                colo_txt = " (COLO)" if p.get("seat_type") == "colo" else ""
+                lines.append(f"{idx}. {p['name'].upper()}{colo_txt} — {status_txt}")
+                lines.append(f"   Nasc: {bd_fmt} | CPF: {p['cpf']}" + (f" | RG: {p['rg']}" if p.get("rg") else ""))
+                if p.get("phone"):
+                    lines.append(f"   Tel: {p['phone']}")
+                lines.append(f"   Embarque: {p['boarding_city']} → Desembarque: {p['alighting_city']}")
+            export_text = "\n".join(lines)
+            st.text_area("Copie o texto abaixo e envie para a empresa:", export_text,
+                         height=300, key=f"export_area_{trip['id']}")
 
         col_edit, col_cancel, col_complete = st.columns([2, 1, 1])
         with col_cancel:

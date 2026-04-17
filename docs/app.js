@@ -48,6 +48,23 @@ function isMinor(birthDateStr) {
   return age < 18;
 }
 
+function isToddler(birthDateStr) {
+  if (!birthDateStr) return false;
+  const birth = new Date(birthDateStr + "T00:00:00");
+  const today = new Date();
+  let age = today.getFullYear() - birth.getFullYear();
+  const m = today.getMonth() - birth.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+  return age < 7;
+}
+
+function seatLabel(available) {
+  if (available <= 0)  return { text: "Esgotado",         cls: "none" };
+  if (available <= 14) return { text: "Últimas vagas",    cls: "seats-last" };
+  if (available <= 24) return { text: "Poucas vagas",     cls: "seats-few" };
+  return                      { text: "Mais de 10 vagas", cls: "seats-many" };
+}
+
 function fmtDate(isoStr) {
   if (!isoStr) return "—";
   const d = new Date(isoStr);
@@ -80,7 +97,11 @@ function buildWhatsAppUrl(trip, boardingCity, alightingCity, passengers) {
   passengers.forEach((p, i) => {
     const bd = p.birth_date ? new Date(p.birth_date + "T00:00:00").toLocaleDateString("pt-BR") : "—";
     msg += `\n*Passageiro ${i + 1}:* ${p.name}`;
-    if (isMinor(p.birth_date)) msg += " _(menor de idade)_";
+    if (isToddler(p.birth_date)) {
+      msg += p.seat_type === "colo" ? " _(colo do acompanhante)_" : " _(poltrona, menor de 7 anos)_";
+    } else if (isMinor(p.birth_date)) {
+      msg += " _(menor de idade)_";
+    }
     msg += `\nCPF: ${p.cpf}`;
     msg += `\nRG: ${p.rg || "não informado"}`;
     msg += `\nNascimento: ${bd}`;
@@ -110,7 +131,7 @@ function renderTripCard(trip, stops) {
       ${publicNotesHtml}
       <div class="trip-meta">
         <div class="trip-seats">
-          Vagas: <span class="${soldOut ? "none" : "available"}">${available}</span> / ${trip.total_seats}
+          ${(() => { const l = seatLabel(available); return `<span class="${l.cls}">${l.text}</span>`; })()}
         </div>
         <div class="trip-price">${fmtPrice(trip.price)}</div>
       </div>
@@ -181,7 +202,7 @@ function openModal(tripId) {
     <strong>${trip.origin} → ${trip.destination}</strong><br>
     📅 ${fmtDate(trip.departure_at)} &nbsp;|&nbsp;
     💰 ${fmtPrice(trip.price)} por pessoa &nbsp;|&nbsp;
-    ${trip.seats_available} vaga(s) disponível(is)
+    ${seatLabel(Number(trip.seats_available)).text}
     ${trip.public_notes ? `<br><br>ℹ️ <em>${trip.public_notes}</em>` : ""}
   `;
 
@@ -250,7 +271,19 @@ function passengerBlock(num) {
         <label for="p${num}-birth">Data de nascimento *</label>
         <input type="date" id="p${num}-birth" name="p${num}-birth"
           max="${new Date().toISOString().split("T")[0]}"
-          oninput="checkMinor(${num})" required />
+          oninput="checkAge(${num})" required />
+      </div>
+      <div class="form-group seat-type-group hidden" id="seat-type-group-${num}">
+        <label>Como vai viajar?</label>
+        <div class="seat-type-options">
+          <label class="seat-type-option">
+            <input type="radio" name="p${num}-seat-type" value="poltrona" checked /> Poltrona
+          </label>
+          <label class="seat-type-option">
+            <input type="radio" name="p${num}-seat-type" value="colo" /> Colo do acompanhante
+            <span class="colo-note">(não ocupa vaga no ônibus)</span>
+          </label>
+        </div>
       </div>
       <div class="form-group">
         <label for="p${num}-phone">Celular <span class="field-hint">(xx) xxxxx-xxxx</span></label>
@@ -262,11 +295,14 @@ function passengerBlock(num) {
   `;
 }
 
-function checkMinor(num) {
-  const birthInput = document.getElementById(`p${num}-birth`);
-  const badge      = document.getElementById(`minor-badge-${num}`);
-  if (!birthInput || !badge) return;
-  badge.classList.toggle("hidden", !isMinor(birthInput.value));
+function checkAge(num) {
+  const birthInput    = document.getElementById(`p${num}-birth`);
+  const minorBadge    = document.getElementById(`minor-badge-${num}`);
+  const seatTypeGroup = document.getElementById(`seat-type-group-${num}`);
+  if (!birthInput) return;
+  const val = birthInput.value;
+  if (minorBadge)    minorBadge.classList.toggle("hidden", !isMinor(val));
+  if (seatTypeGroup) seatTypeGroup.classList.toggle("hidden", !isToddler(val));
 }
 
 function removePassenger(num) {
@@ -286,7 +322,9 @@ function collectPassengers() {
     const rg    = (document.getElementById(`p${num}-rg`)?.value    || "").trim();
     const birth = document.getElementById(`p${num}-birth`)?.value  || "";
     const phone = (document.getElementById(`p${num}-phone`)?.value || "").trim();
-    passengers.push({ name, cpf, rg: rg || null, birth_date: birth, phone: phone || null });
+    const seatTypeEl = document.querySelector(`input[name="p${num}-seat-type"]:checked`);
+    const seat_type = seatTypeEl ? seatTypeEl.value : "poltrona";
+    passengers.push({ name, cpf, rg: rg || null, birth_date: birth, phone: phone || null, seat_type });
   }
   return passengers;
 }

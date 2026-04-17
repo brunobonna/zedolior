@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Monitor — Zé do Lior Viagens</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    /* ── Monitor-specific styles ─────────────────────────────── */
+    .mon-login-wrap {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg);
+      padding: 16px;
+    }
+    .mon-login-card {
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 36px 28px;
+      width: 100%;
+      max-width: 360px;
+      text-align: center;
+    }
+    .mon-login-card h1 { font-size: 1.4rem; margin-bottom: 6px; color: var(--brand-dk); }
+    .mon-login-card p  { color: var(--muted); margin-bottom: 24px; font-size: 0.95rem; }
+    .mon-login-card input[type="password"] {
+      width: 100%;
+      padding: 12px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 1.2rem;
+      text-align: center;
+      letter-spacing: 4px;
+      margin-bottom: 12px;
+      min-height: 48px;
+    }
+    .mon-login-card input[type="password"]:focus { outline: none; border-color: var(--brand); }
+    .mon-login-error {
+      color: #c00;
+      font-size: 0.9rem;
+      margin-bottom: 12px;
+    }
+
+    /* ── Dashboard ───────────────────────────────────────────── */
+    .mon-header {
+      background: var(--brand);
+      color: var(--white);
+      padding: 16px 0;
+    }
+    .mon-header-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 0 16px;
+    }
+    .mon-header h1 { font-size: 1.2rem; }
+    .mon-header-actions { display: flex; gap: 8px; }
+    .mon-btn-sm {
+      background: rgba(255,255,255,.2);
+      color: var(--white);
+      border: none;
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      min-height: 36px;
+    }
+    .mon-btn-sm:hover { background: rgba(255,255,255,.3); }
+
+    .mon-main { max-width: 720px; margin: 0 auto; padding: 20px 16px 48px; }
+
+    .mon-trip-card {
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 18px 20px;
+      margin-bottom: 16px;
+      border-left: 5px solid var(--brand);
+    }
+    .mon-trip-route { font-size: 1.15rem; font-weight: 700; margin-bottom: 4px; }
+    .mon-trip-date  { font-size: 0.9rem; color: var(--muted); margin-bottom: 14px; }
+
+    .mon-badges { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 4px; }
+    .mon-badge {
+      padding: 7px 14px;
+      border-radius: 20px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      border: none;
+      cursor: default;
+      min-height: 36px;
+    }
+    .mon-badge[data-expandable] { cursor: pointer; }
+    .mon-badge[data-expandable]:hover { opacity: .85; }
+    .mon-badge[data-expandable].active { outline: 2px solid #333; }
+    .badge-paid     { background: #d4edda; color: #155724; }
+    .badge-reserved { background: #fff3cd; color: #856404; }
+    .badge-pending  { background: #fde8d8; color: #7a3010; }
+    .badge-empty    { background: #f0f0f0; color: #888; }
+
+    .mon-pax-list {
+      margin-top: 10px;
+      border-top: 1px solid var(--border);
+      padding-top: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .mon-pax-name {
+      background: none;
+      border: none;
+      text-align: left;
+      padding: 8px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.95rem;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .mon-pax-name:hover { background: #f0f0f0; }
+    .mon-group { font-size: 0.82em; color: var(--muted); }
+    .mon-empty-list { font-size: 0.88rem; color: var(--muted); padding: 4px 0; }
+
+    .mon-loading { text-align: center; color: var(--muted); padding: 32px 0; }
+    .mon-error   { text-align: center; color: #c00; padding: 24px 0; }
+    .mon-empty   { text-align: center; color: var(--muted); padding: 32px 0; }
+
+    /* ── Passenger detail modal ──────────────────────────────── */
+    #pax-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.55);
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    #pax-modal-inner {
+      background: var(--white);
+      border-radius: var(--radius);
+      padding: 24px 22px;
+      width: 100%;
+      max-width: 380px;
+      position: relative;
+    }
+    #pax-modal-close {
+      position: absolute;
+      top: 12px; right: 14px;
+      background: none; border: none;
+      font-size: 1.5rem; cursor: pointer; color: var(--muted);
+    }
+    #pax-modal-content h3 { font-size: 1.1rem; margin-bottom: 8px; }
+    #pax-modal-content p  { margin-bottom: 6px; font-size: 0.95rem; }
+    .mon-detail-status { font-weight: 600; margin-bottom: 12px; }
+    .mon-phone-section { margin-top: 16px; }
+    .mon-phone-link {
+      display: inline-block;
+      background: #25d366;
+      color: #fff;
+      text-decoration: none;
+      padding: 11px 20px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 1rem;
+      width: 100%;
+      text-align: center;
+    }
+    .mon-no-phone { color: var(--muted); font-size: 0.9rem; }
+    .mon-pending-info { color: var(--muted); font-size: 0.88rem; padding: 8px 0; }
+    .mon-group-info { font-size: 0.88rem; color: var(--muted); }
+  </style>
+</head>
+<body>
+
+  <!-- TELA DE LOGIN -->
+  <div id="login-screen" class="mon-login-wrap">
+    <div class="mon-login-card">
+      <h1>🚐 Zé do Lior Viagens</h1>
+      <p>Painel de acompanhamento</p>
+      <form id="login-form" autocomplete="off">
+        <input type="password" id="login-password"
+          placeholder="••••••" maxlength="20" autocomplete="new-password" />
+        <p id="login-error" class="mon-login-error hidden">Senha incorreta. Tente novamente.</p>
+        <button type="submit" class="btn-primary">Entrar</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="dashboard" class="hidden">
+    <header class="mon-header">
+      <div class="mon-header-inner">
+        <h1>📊 Monitor de Viagens</h1>
+        <div class="mon-header-actions">
+          <button id="refresh-btn" class="mon-btn-sm">🔄 Atualizar</button>
+          <button id="logout-btn"  class="mon-btn-sm">Sair</button>
+        </div>
+      </div>
+    </header>
+    <main class="mon-main">
+      <div id="monitor-trips"></div>
+    </main>
+  </div>
+
+  <!-- MODAL DE DETALHES DO PASSAGEIRO -->
+  <div id="pax-modal" class="hidden">
+    <div id="pax-modal-inner">
+      <button id="pax-modal-close" aria-label="Fechar">&times;</button>
+      <div id="pax-modal-content"></div>
+    </div>
+  </div>
+
+  <!-- CONFIGURAÇÃO -->
+  <script>
+    window.SUPABASE_URL      = "https://rrwgwxylgbkdcwdpkbxw.supabase.co";
+    window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJyd2d3eHlsZ2JrZGN3ZHBrYnh3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzNDIwOTksImV4cCI6MjA5MDkxODA5OX0.qIDTi7KqdKgTfmOd_wilTR5JzaTB0bF3I2Q6pmqsL4o";
+    window.MONITOR_PASSWORD  = "perola";
+  </script>
+  <script src="monitor.js"></script>
+</body>
+</html>

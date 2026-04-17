@@ -85,8 +85,11 @@ body {
 
 .trip-meta { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
 .trip-seats { font-size: 0.95rem; }
-.trip-seats .available { color: var(--brand); font-weight: 700; }
-.trip-seats .none      { color: #c00; font-weight: 700; }
+.trip-seats .available  { color: var(--brand); font-weight: 700; }
+.trip-seats .none       { color: #c00; font-weight: 700; }
+.trip-seats .seats-many { color: var(--brand); font-weight: 700; }
+.trip-seats .seats-few  { color: var(--accent); font-weight: 700; }
+.trip-seats .seats-last { color: #c55; font-weight: 700; }
 .trip-price { font-size: 1.15rem; font-weight: 700; color: var(--brand-dk); }
 
 /* ── Buttons ─────────────────────────────────────────────────── */
@@ -237,6 +240,13 @@ body {
   margin-left: 8px;
   vertical-align: middle;
 }
+
+/* ── Seat type selector (colo/poltrona) ──────────────────────── */
+.seat-type-group { border-top: 1.5px solid var(--border); padding-top: 12px; margin-top: 4px; }
+.seat-type-options { display: flex; flex-direction: column; gap: 10px; margin-top: 6px; }
+.seat-type-option { display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 400; font-size: 0.95rem; }
+.seat-type-option input[type="radio"] { width: 18px; height: 18px; accent-color: var(--brand); cursor: pointer; flex-shrink: 0; }
+.colo-note { font-size: 0.8em; color: var(--muted); }
 
 /* ── Error / success ─────────────────────────────────────────── */
 .error-msg {
