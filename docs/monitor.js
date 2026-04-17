@@ -81,6 +81,14 @@ async function loadDashboard() {
       return;
     }
 
+    const tripIds = trips.map(t => t.id).join(",");
+    const allStops = await sbGet(`trip_stops?trip_id=in.(${tripIds})&order=stop_order.asc`);
+    const stopsByTrip = {};
+    allStops.forEach(s => {
+      if (!stopsByTrip[s.trip_id]) stopsByTrip[s.trip_id] = [];
+      stopsByTrip[s.trip_id].push(s.city);
+    });
+
     const pendingMap = {};
     (pendingCounts || []).forEach(r => {
       pendingMap[r.trip_id] = Number(r.pending_passengers || 0);
@@ -92,7 +100,8 @@ async function loadDashboard() {
       const paid     = tripPax.filter(p => p.seat_status === "paid");
       const reserved = tripPax.filter(p => p.seat_status === "reserved");
       const pending  = pendingMap[trip.id] || 0;
-      tripsContainer.insertAdjacentHTML("beforeend", renderTripCard(trip, paid, reserved, pending));
+      const stops    = stopsByTrip[trip.id] || [];
+      tripsContainer.insertAdjacentHTML("beforeend", renderTripCard(trip, stops, paid, reserved, pending));
     });
 
     attachHandlers(tripsContainer);
@@ -104,8 +113,9 @@ async function loadDashboard() {
 }
 
 // ── Render ────────────────────────────────────────────────────
-function renderTripCard(trip, paid, reserved, pendingCount) {
+function renderTripCard(trip, stops, paid, reserved, pendingCount) {
   const tid = trip.id;
+  const fullRoute = stops.length > 0 ? stops.join(" → ") : `${trip.origin} → ${trip.destination}`;
 
   const paidBadge = paid.length
     ? `<button class="mon-badge badge-paid" data-expandable data-target="paid-${tid}">✅ ${paid.length} Pago${paid.length !== 1 ? "s" : ""}</button>`
@@ -123,10 +133,18 @@ function renderTripCard(trip, paid, reserved, pendingCount) {
   const reservedList = reserved.map(p => paxItem(p)).join("") || `<p class="mon-empty-list">Nenhum passageiro reservado.</p>`;
   const pendingMsg   = `<p class="mon-pending-info">Há ${pendingCount} pessoa(s) aguardando confirmação.<br>Acesse o painel admin para ver e aprovar.</p>`;
 
+  const seatsHtml = `<div class="mon-trip-seats">🚌 ${trip.total_seats} vagas — ${trip.seats_taken} ocupada${trip.seats_taken !== 1 ? "s" : ""}, ${trip.seats_available} disponível${trip.seats_available !== 1 ? "is" : ""}</div>`;
+  const notesHtml = trip.notes
+    ? `<div class="mon-trip-notes mon-notes-internal">🔒 ${trip.notes}</div>` : "";
+  const pubNotesHtml = trip.public_notes
+    ? `<div class="mon-trip-notes mon-notes-public">ℹ️ ${trip.public_notes}</div>` : "";
+
   return `
     <div class="mon-trip-card">
       <div class="mon-trip-route">${trip.origin} → ${trip.destination}</div>
+      <div class="mon-trip-stops">${fullRoute}</div>
       <div class="mon-trip-date">📅 ${fmtDate(trip.departure_at)}</div>
+      ${seatsHtml}${notesHtml}${pubNotesHtml}
       <div class="mon-badges">${paidBadge} ${resBadge} ${pendBadge}</div>
       <div class="mon-pax-list hidden" id="paid-${tid}">${paidList}</div>
       <div class="mon-pax-list hidden" id="reserved-${tid}">${reservedList}</div>
