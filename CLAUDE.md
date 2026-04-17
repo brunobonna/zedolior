@@ -23,7 +23,10 @@ Sistema de gestão de transporte rodoviário de passageiros para a empresa **Zé
 ```
 zedolior/
 ├── database/
-│   └── schema.sql          # DDL completo: tabelas, views, RLS, triggers
+│   ├── schema.sql                          # DDL completo: tabelas, views, RLS, funções
+│   └── migrations/
+│       ├── 001_seat_type_and_monitor.sql   # seat_type, view atualizada, funções RPC monitor
+│       └── 002_monitor_password.sql        # check_monitor_access (template — senha não commitada)
 ├── admin/
 │   ├── app.py              # Entry point: autenticação + navegação
 │   ├── app_painel.py       # Página Painel (📊)
@@ -32,13 +35,16 @@ zedolior/
 │   ├── .streamlit/
 │   │   └── secrets.toml    # NÃO commitado — ver seção Secrets
 │   └── pages/
-│       ├── 1_Viagens.py    # CRUD de viagens + paradas
+│       ├── 1_Viagens.py    # CRUD de viagens + paradas + exportação para empresa
 │       ├── 2_Passageiros.py# Gestão de passageiros por viagem
 │       └── 3_Pendentes.py  # Revisão de solicitações do site público
 └── docs/
     ├── index.html          # Estrutura + configuração JS (SUPABASE_URL etc.)
     ├── app.js              # Lógica: lista viagens, formulário, WhatsApp
-    └── style.css           # CSS com custom properties (--brand, --accent)
+    ├── style.css           # CSS com custom properties (--brand, --accent)
+    ├── monitor.html        # Tela somente-leitura para acompanhamento (senha via Supabase)
+    ├── monitor.js          # Lógica do monitor: login RPC, dashboard, cards de viagem
+    └── manual.html         # Manual do operador (mobile-first, sem nomes de pessoas)
 ```
 
 ---
@@ -60,21 +66,30 @@ zedolior/
 - `trip_id`, `name`, `cpf`, `rg`, `birth_date`, `is_minor`
 - `boarding_city`, `alighting_city`
 - `seat_status`: `reserved` | `paid`
+- `seat_type`: `poltrona` | `colo` (colo = menor de 7 anos no colo do acompanhante, não ocupa vaga)
 - `phone`, `group_leader`, `notes`
 - `source`: `admin` | `public_request`
 
 **`pending_requests`** — solicitações do site público
 - `trip_id`, `boarding_city`, `alighting_city`, `passenger_count`
-- `passengers_json` (jsonb): array com name, cpf, rg, birth_date, phone, notes
+- `passengers_json` (jsonb): array com name, cpf, rg, birth_date, phone, seat_type, notes
 - `status`: `pending` | `approved` | `rejected`
 - `rejection_note`
 
 ### View
 
-**`trip_availability`** — trips ativas + `seats_taken` + `seats_available`
+**`trip_availability`** — trips ativas + `seats_taken` (só poltrona) + `seats_available`
+
+### Funções RPC (security definer)
+
+**`get_passengers_for_monitor()`** — retorna passageiros de viagens ativas sem CPF/RG (seguro para anon key)
+
+**`get_trip_pending_counts()`** — retorna contagem de pendentes por trip_id para anon key
+
+**`check_monitor_access(pwd text)`** — verifica senha do monitor; senha real configurada no Supabase, nunca no código
 
 ### RLS (Row-Level Security)
-- Anon: lê apenas viagens/paradas ativas, insere pending_requests
+- Anon: lê apenas viagens/paradas ativas, insere pending_requests, executa funções RPC do monitor
 - Service role (admin): acesso total, bypass RLS
 
 ---
@@ -143,3 +158,7 @@ Site público: abrir `docs/index.html` direto no navegador ou servir com qualque
 - **RLS no Supabase**: anon key é seguro no frontend porque as policies impedem leitura/escrita não autorizada.
 - **`docs/` como pasta do GitHub Pages**: padrão do GitHub Pages para sites sem Jekyll.
 - **`group_leader`**: responsável pelo grupo quando vários passageiros viajam juntos; campo livre (nome da pessoa).
+- **`seat_type` / colo**: menores de 7 anos podem ir no colo do acompanhante (`seat_type = 'colo'`); não contam como vaga ocupada na view nem nas métricas do admin.
+- **Monitor somente-leitura**: `docs/monitor.html` + `docs/monitor.js`; senha verificada via RPC `check_monitor_access()` — nunca exposta no código-fonte. Usa `sessionStorage` para persistir login.
+- **Funções RPC como camada de segurança**: `get_passengers_for_monitor()` e `get_trip_pending_counts()` rodam como security definer, expondo apenas campos seguros à anon key sem precisar relaxar RLS nas tabelas.
+- **Manual do operador**: `docs/manual.html` — página mobile-first sem dependências externas, explica os dois perfis de uso (monitor e admin) e o fluxo do dia a dia.

@@ -1,13 +1,25 @@
 # Changelog — Zé do Lior Viagens
 
-## v1.0 — Vagas por label, colo, monitor Everaldo e exportação
+## v1.1 — Monitor completo, senha segura e manual do operador
+**Data:** 2026-04-17
+
+- **Monitor aprimorado:** exibe rota completa com todas as paradas (`stops.join(" → ")`), total de vagas, ocupadas e disponíveis, observações internas (cinza) e públicas (âmbar)
+- **Senha do monitor via Supabase:** senha nunca fica no código-fonte; verificação feita via RPC `check_monitor_access()` (security definer); migration template em `database/migrations/002_monitor_password.sql`
+- **Manual do operador** (`docs/manual.html`): página mobile-first com 9 seções explicando o fluxo completo para quem acompanha (monitor) e quem opera (admin); sem nomes de pessoas
+- **Hotfix Passageiros:** variável `available` restaurada após refatoração de métricas (corrige `NameError` na linha 191)
+- **Filtro de viagens ativas:** `load_active_trips()` em Passageiros corrigido para `eq("status", "active")` — excluía apenas canceladas mas mostrava concluídas
+
+---
+
+## v1.0 — Vagas por label, colo, monitor e exportação
 **Data:** 2026-04-17
 
 - **Vagas no site:** em vez de número, exibe "Mais de 10 vagas" / "Poucas vagas" / "Últimas vagas"
 - **Opção colo:** passageiros menores de 7 anos podem escolher Poltrona ou Colo do acompanhante; colo não ocupa vaga no ônibus (banco, admin e site)
-- **Monitor do Everaldo** (`docs/monitor.html`): tela de acompanhamento com senha "perola", mostra viagens ativas com contagem de pagos/reservados/pendentes; ao clicar nos nomes abre dados com botão WhatsApp
+- **Monitor** (`docs/monitor.html` + `docs/monitor.js`): tela de acompanhamento somente-leitura com contagem de pagos/reservados/pendentes e lista de passageiros com botão WhatsApp
 - **Exportação para empresa** (Admin → Viagens): botão "📋 Lista para empresa de ônibus" gera texto copiável com dados da viagem e lista de passageiros confirmados
-- **Migration SQL** em `database/migrations/001_seat_type_and_monitor.sql` — precisa ser rodado no Supabase antes de usar
+- **Métricas admin:** todos os painéis mostram "X/Y ocupadas" em vez de vagas disponíveis; passageiros "colo" não contam como vaga ocupada
+- **Migration SQL** em `database/migrations/001_seat_type_and_monitor.sql` — `seat_type`, view atualizada, funções RPC para monitor
 
 ---
 
