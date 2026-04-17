@@ -15,7 +15,7 @@ db = get_supabase()
 # ── Helpers ───────────────────────────────────────────────────
 
 def load_active_trips():
-    return db.table("trips").select("id, origin, destination, departure_at, total_seats, status").neq("status", "cancelled").order("departure_at").execute().data
+    return db.table("trips").select("id, origin, destination, departure_at, total_seats, status").eq("status", "active").order("departure_at").execute().data
 
 def load_passengers(trip_id: str):
     return db.table("passengers").select("*").eq("trip_id", trip_id).order("created_at").execute().data
@@ -174,12 +174,12 @@ trip = next(t for t in trips if t["id"] == selected_id)
 n_paid     = sum(1 for p in passengers if p["seat_status"] == "paid")
 n_reserved = sum(1 for p in passengers if p["seat_status"] == "reserved")
 n_pending  = len(db.table("pending_requests").select("id").eq("trip_id", selected_id).eq("status", "pending").execute().data)
-available  = trip["total_seats"] - len(passengers)
+n_occupied = sum(1 for p in passengers if p.get("seat_type", "poltrona") != "colo")
 
 # Metrics
 col1, col2, col3, col4, col5 = st.columns(5)
-col1.metric("Vagas", trip["total_seats"])
-col2.metric("Disponíveis", available)
+col1.metric("🎫 Total", trip["total_seats"])
+col2.metric("🪑 Ocupadas", f"{n_occupied}/{trip['total_seats']}")
 col3.metric("✅ Pagos", n_paid)
 col4.metric("⏳ Reservados", n_reserved)
 col5.metric("🔔 Pendentes", n_pending)

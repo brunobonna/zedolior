@@ -282,7 +282,7 @@ for trip in trips:
     header = (
         f"{status_icon} {trip['origin']} → {trip['destination']} | "
         f"{fmt_dt(trip['departure_at'])} | "
-        f"{available}/{trip['total_seats']} vagas | "
+        f"{n_confirmed}/{trip['total_seats']} ocupadas | "
         f"R$ {float(trip['price']):.2f}"
     )
 

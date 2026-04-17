@@ -29,6 +29,12 @@ def load_stops(trip_id: str) -> list[str]:
     rows = db.table("trip_stops").select("city").eq("trip_id", trip_id).order("stop_order").execute().data
     return [r["city"] for r in rows]
 
+def load_seats(trip_ids: list[str]) -> dict:
+    if not trip_ids:
+        return {}
+    rows = db.table("trip_availability").select("id, total_seats, seats_taken").in_("id", trip_ids).execute().data
+    return {r["id"]: r for r in rows}
+
 def fmt_dt(dt_str: str | None) -> str:
     if not dt_str:
         return "—"
@@ -75,9 +81,13 @@ with tab_pending:
     if not requests:
         st.info("Nenhuma solicitação pendente no momento.")
     else:
+        trip_ids_pend = list({r["trip_id"] for r in requests})
+        seats_pend = load_seats(trip_ids_pend)
         for req in requests:
             trip_info = req.get("trips", {}) or {}
-            trip_label = f"{trip_info.get('origin', '?')} → {trip_info.get('destination', '?')} | {fmt_dt(trip_info.get('departure_at'))}"
+            seats = seats_pend.get(req["trip_id"], {})
+            seats_str = f" | {seats.get('seats_taken', '?')}/{seats.get('total_seats', '?')} ocupadas" if seats else ""
+            trip_label = f"{trip_info.get('origin', '?')} → {trip_info.get('destination', '?')} | {fmt_dt(trip_info.get('departure_at'))}{seats_str}"
             stops = load_stops(req["trip_id"])
             passengers_json = req.get("passengers_json") or []
             first_name = passengers_json[0].get("name", "?") if passengers_json else "?"
